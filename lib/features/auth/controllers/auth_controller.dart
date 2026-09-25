@@ -86,7 +86,7 @@ class AuthController extends GetxController with WidgetsBindingObserver implemen
   List<MultipartDocument> otherDocuments = [];
   FilePickerResult? _otherFile;
   PlatformFile? objFile;
-  String countryDialCode = '+880';
+  String countryDialCode = '+237';
   bool isParcelShare = true;
   bool isRideShare = true;
   String selectedGender = 'select_gender';
@@ -786,7 +786,7 @@ class AuthController extends GetxController with WidgetsBindingObserver implemen
         _additionalFieldControllers[field.id] = TextEditingController();
         _additionalFieldFocusNodes[field.id] = FocusNode();
         if (field.fieldType == AdditionalFieldType.phone) {
-          _additionalFieldPhoneCountryCodes[field.id] = CountryCode.fromCountryCode(Get.find<SplashController>().config!.countryCode!).dialCode ?? '+880';
+          _additionalFieldPhoneCountryCodes[field.id] = CountryCode.fromCountryCode(Get.find<SplashController>().config!.countryCode!).dialCode ?? '+237';
         }
       }
     }

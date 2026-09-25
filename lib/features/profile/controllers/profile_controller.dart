@@ -613,7 +613,7 @@ class ProfileController extends GetxController implements GetxService{
        _additionalFieldControllers[field.id] = TextEditingController();
 
        if (field.fieldType == AdditionalFieldType.phone) {
-         _additionalFieldPhoneCountryCodes[field.id] = CountryCode.fromCountryCode(Get.find<SplashController>().config!.countryCode!).dialCode ?? '+880';
+         _additionalFieldPhoneCountryCodes[field.id] = CountryCode.fromCountryCode(Get.find<SplashController>().config!.countryCode!).dialCode ?? '+237';
        }
 
        profileInfo?.additionalData?.forEach((additionData){

@@ -3,9 +3,9 @@ import 'package:ride_sharing_user_app/localization/language_model.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 
 class AppConstants {
-  static const String appName = 'Drivemond Driver';
-  static const String baseUrl = 'YOUR_BASE_URL_HERE';
-  static const String polylineMapKey = 'YOUR_MAP_KEY_HERE';
+  static const String appName = 'E-Ride Driver';
+  static const String baseUrl = 'http://3.217.74.87';
+  static const String polylineMapKey = 'AIzaSyCYuvunvdHlIVWuExTDkvKyEcsZWYPA25w';
   static const double appVersion = 3.3;   /// Flutter SDK 3.44.7
   static const String configUri = '/api/driver/configuration';
   static const String registration = '/api/driver/auth/registration';
@@ -163,7 +163,7 @@ class AppConstants {
 
   static List<LanguageModel> languages = [
     LanguageModel(imageUrl: Images.unitedKingdom, languageName: 'English', countryCode: 'US', languageCode: 'en'),
-    LanguageModel(imageUrl: Images.saudi, languageName: 'عربي', countryCode: 'SA', languageCode: 'ar'),
+    LanguageModel(imageUrl: Images.saudi, languageName: 'Français', countryCode: 'CM', languageCode: 'fr'),
   ];
 
   static const int imageQuality = 80;

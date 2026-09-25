@@ -177,9 +177,9 @@ class ConfigModel {
     logo = json['logo'];
     bidOnFare = json['bid_on_fare'] != null ? (json['bid_on_fare'].toString() == '1' || json['bid_on_fare'].toString() == 'true') : null;
     if(json['country_code'] != null && json['country_code'] != ""){
-      countryCode = json['country_code']??'BD';
+      countryCode = json['country_code']??'CM';
     }else{
-      countryCode = 'BD';
+      countryCode = 'CM';
     }
     businessAddress = json['business_address'];
     businessContactPhone = json['business_contact_phone'];
