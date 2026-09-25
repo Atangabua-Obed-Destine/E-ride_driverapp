@@ -227,7 +227,7 @@ class SafetyAlertController extends GetxController implements GetxService {
     if(distance > 20){
       oldPosition = newLocation;
     }else {
-      if(!(Get.isBottomSheetOpen ?? false) && !((Get.find<RideController>().remainingDistanceItem?[0].durationSec ?? 0) < (Get.find<RideController>().remainingDistanceItem?[0].durationInTrafficSec ?? 0))){
+      if(!(Get.isBottomSheetOpen ?? false) && !((Get.find<RideController>().remainingDistanceItem[0].durationSec ?? 0) < (Get.find<RideController>().remainingDistanceItem[0].durationInTrafficSec ?? 0))){
         Get.bottomSheet(
           isScrollControlled: true,
           const SafetyAlertDelayWidget(),

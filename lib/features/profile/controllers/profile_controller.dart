@@ -469,7 +469,7 @@ class ProfileController extends GetxController implements GetxService{
     _location.enableBackgroundMode(enable: true);
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      List<String> status = ['accepted', 'ongoing', 'out_for_pickup'];
+      List<String> status = ['accepted', 'ongoing', 'outForPickup'];
       if(Get.find<RideController>().tripDetail != null && status.contains(Get.find<RiderMapController>().currentRideState.name) && Get.find<AuthController>().getUserToken() != ''){
         Get.find<RideController>().remainingDistance(Get.find<RideController>().tripDetail!.id!);
       }
@@ -549,7 +549,7 @@ class ProfileController extends GetxController implements GetxService{
   }
 
   void removeFaveVerificationSuspendWarning(){
-   profileInfo?.isSuspended = false;
+   profileInfo?.isPaused = false;
    update();
   }
 
@@ -613,7 +613,7 @@ class ProfileController extends GetxController implements GetxService{
        _additionalFieldControllers[field.id] = TextEditingController();
 
        if (field.fieldType == AdditionalFieldType.phone) {
-         _additionalFieldPhoneCountryCodes[field.id] = CountryCode.fromCountryCode(Get.find<SplashController>().config!.countryCode!).dialCode ?? '+880';
+         _additionalFieldPhoneCountryCodes[field.id] = CountryCode.fromCountryCode(Get.find<SplashController>().config!.countryCode!).dialCode ?? '+237';
        }
 
        profileInfo?.additionalData?.forEach((additionData){

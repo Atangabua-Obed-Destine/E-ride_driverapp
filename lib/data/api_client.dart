@@ -150,7 +150,10 @@ class ApiClient extends GetxService {
     request.headers.addAll(headers ?? _mainHeaders);
 
     if(otherFile != null) {
-      request.files.add(http.MultipartFile('files[${multipartBody!.length}]', otherFile.readStream!, otherFile.size, filename: basename(otherFile.name)));
+      String fileExtension = extension(otherFile.name).replaceFirst('.', '').toLowerCase();
+      bool isAudio = AppConstants.audioFileExtensions.contains(fileExtension);
+      request.files.add(http.MultipartFile(isAudio ? 'voice_message' : 'files[${multipartBody!.length}]', otherFile.readStream!, otherFile.size, filename: basename(otherFile.name)));
+
     }
     if(multipartBody!=null){
       for(MultipartBody multipart in multipartBody) {

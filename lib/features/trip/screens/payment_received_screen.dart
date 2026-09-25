@@ -292,7 +292,7 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> with Widg
                               borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)
                           ),
                           child: Text(
-                            '${Get.find<RideController>().tripDetail?.paymentMethod}',
+                            '${Get.find<RideController>().tripDetail?.paymentMethod?.tr}',
                             style: textRobotoMedium.copyWith(
                               color: Get.isDarkMode ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color,
                             ),

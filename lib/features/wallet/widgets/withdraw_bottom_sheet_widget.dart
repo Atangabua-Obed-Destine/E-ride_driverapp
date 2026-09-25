@@ -39,6 +39,7 @@ class WithdrawRequestWidgetState extends State<WithdrawRequestWidget> {
       context, ((profileController.profileInfo?.wallet?.payableBalance ?? 0 ) -
         (profileController.profileInfo?.wallet?.receivableBalance ?? 0)),
     );
+    Get.find<WalletController>().setMethodInfoTypeIndex(null, isUpdate: false);
     super.initState();
   }
 
@@ -82,34 +83,34 @@ class WithdrawRequestWidgetState extends State<WithdrawRequestWidget> {
                     ),
                     child: Column(children: [
                       if(walletController.withdrawMethodInfoData != null)
-                        Container(width: Get.width,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(Dimensions.paddingSizeOver),
-                                border: Border.all(
-                                  color: walletController.isMethodSelected ?
-                                  Theme.of(context).primaryColor.withValues(alpha: 0.25):
-                                  Theme.of(context).colorScheme.error,
-                                )
-                            ),
-                            child: DropdownButton<SingleMethodInfo>(
-                              underline: const SizedBox(),
-                              isExpanded: true,
-                              hint: Text(walletController.selectedMethodInfo?.methodName ?? 'select_withdraw_method'.tr),
-                              icon: Icon(Icons.arrow_drop_down_outlined),
-                              padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                              items: walletController.withdrawMethodInfoData!.data!.map((item) =>
-                                  DropdownMenuItem<SingleMethodInfo>(
-                                    value: item,
-                                    child: Text(item.methodName ?? '', style: textRegular.copyWith(
-                                      fontSize: Dimensions.fontSizeSmall,
-                                      color: Theme.of(context).textTheme.bodyMedium!.color,
-                                    )),
-                                  )).toList(),
-                              onChanged: (value) {
-                                walletController.setMethodInfoTypeIndex(value!);
-                                walletController.toggleMethodSelected(true);
-                              },
-                            )
+                        Container(
+                          height: 50,
+                          padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(Dimensions.paddingSizeOver),
+                              border: Border.all(
+                                color: walletController.isMethodSelected ?
+                                Theme.of(context).primaryColor.withValues(alpha: 0.25):
+                                Theme.of(context).colorScheme.error,
+                              )
+                          ),
+                          child: DropdownButton<SingleMethodInfo>(
+                            hint: Text(walletController.selectedMethodInfo?.methodName ?? 'select_withdraw_method'.tr),
+                            items: walletController.withdrawMethodInfoData!.data!.map((item) =>
+                                DropdownMenuItem<SingleMethodInfo>(
+                                  value: item,
+                                  child: Text(item.methodName ?? '', style: textRegular.copyWith(
+                                    fontSize: Dimensions.fontSizeSmall,
+                                    color: Theme.of(context).textTheme.bodyMedium!.color,
+                                  )),
+                                )).toList(),
+                            onChanged: (value) {
+                              walletController.setMethodInfoTypeIndex(value!);
+                              walletController.toggleMethodSelected(true);
+                            },
+                            isExpanded: true,
+                            underline: const SizedBox(),
+                          ),
                         ),
                       const SizedBox(height: Dimensions.paddingSizeDefault),
 

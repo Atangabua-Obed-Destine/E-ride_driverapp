@@ -77,6 +77,11 @@ import 'package:ride_sharing_user_app/features/setting/controllers/setting_contr
 import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
 import 'package:ride_sharing_user_app/features/splash/domain/repositories/splash_repository.dart';
 import 'package:ride_sharing_user_app/data/api_client.dart';
+import 'package:ride_sharing_user_app/features/availability/controllers/availability_controller.dart';
+import 'package:ride_sharing_user_app/features/availability/domain/repositories/availability_repository.dart';
+import 'package:ride_sharing_user_app/features/availability/domain/repositories/availability_repository_interface.dart';
+import 'package:ride_sharing_user_app/features/availability/domain/services/availability_service.dart';
+import 'package:ride_sharing_user_app/features/availability/domain/services/availability_service_interface.dart';
 import 'package:ride_sharing_user_app/features/splash/domain/repositories/splash_repository_interface.dart';
 import 'package:ride_sharing_user_app/features/splash/domain/services/splash_service.dart';
 import 'package:ride_sharing_user_app/features/splash/domain/services/splash_service_interface.dart';
@@ -184,6 +189,11 @@ Future<Map<String, Map<String, String>>> init() async {
   FaceVerificationServiceInterface faceVerificationServiceInterface = FaceVerificationService(faceVerificationRepositoryInterface: Get.find());
   Get.lazyPut(()=> faceVerificationServiceInterface);
 
+  AvailabilityRepositoryInterface availabilityRepositoryInterface = AvailabilityRepository(apiClient: Get.find());
+  Get.lazyPut(() => availabilityRepositoryInterface);
+  AvailabilityServiceInterface availabilityServiceInterface = AvailabilityService(availabilityRepositoryInterface: Get.find());
+  Get.lazyPut(() => availabilityServiceInterface);
+
 
 
   //Service
@@ -204,6 +214,7 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(() => SafetyAlertService(safetyAlertRepositoryInterface: Get.find()));
   Get.lazyPut(() => FaceVerificationService(faceVerificationRepositoryInterface: Get.find()));
   Get.lazyPut(() => LocationTrackingService(locationTrackingRepositoryInterface: Get.find()));
+  Get.lazyPut(() => AvailabilityService(availabilityRepositoryInterface: Get.find()));
 
 
 
@@ -228,6 +239,7 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(() => SafetyAlertRepository(apiClient: Get.find()));
   Get.lazyPut(() => FaceVerificationRepository(apiClient: Get.find()));
   Get.lazyPut(() => LocationTrackingRepository(apiClient: Get.find()));
+  Get.lazyPut(() => AvailabilityRepository(apiClient: Get.find()));
 
 
   // Controller
@@ -247,6 +259,7 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(() => RiderMapController());
   Get.lazyPut(() => BottomMenuController());
   Get.lazyPut(() => SettingController());
+  Get.lazyPut(() => AvailabilityController(availabilityServiceInterface: Get.find()));
   Get.lazyPut(() => LocationController(locationServiceInterface: Get.find()));
   Get.lazyPut(() => OtpTimeCountController());
   Get.lazyPut(() => ReferAndEarnController(referEarnServiceInterface: Get.find()));

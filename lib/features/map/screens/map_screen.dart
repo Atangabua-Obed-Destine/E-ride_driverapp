@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:ride_sharing_user_app/common_widgets/expandable_bottom_sheet.dart';
+import 'package:ride_sharing_user_app/features/map/widgets/verify_and_driver_near_by_toster_widget.dart';
 import 'package:ride_sharing_user_app/features/profile/screens/profile_screen.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/models/trip_details_model.dart';
 import 'package:ride_sharing_user_app/features/safety_setup/controllers/safety_alert_controller.dart';
@@ -191,6 +192,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver{
                       ),
                     ),
 
+                    VerifyAndDriverNearByToasterWidget(),
+
                     InkWell(
                       onTap: () => Get.to(const ProfileScreen()),
                       child: const DriverHeaderInfoWidget(),
@@ -250,7 +253,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver{
                     )),
 
                     if(_isLocationShareEnable())
-                    Positioned(bottom: Get.height * 0.46, right:0,
+                    Positioned(bottom: Get.height * 0.476, right:0,
                       child: Align(
                           alignment: Alignment.bottomRight,
                           child: CustomIconCardWidget(
@@ -270,7 +273,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver{
 
                     if(_isSafetyFeatureActive())
                       Positioned(
-                        bottom: _isLocationShareEnable() ? Get.height * 0.52 : Get.height * 0.46, right:0,
+                        bottom: _isLocationShareEnable() ? Get.height * 0.54 : Get.height * 0.46, right:0,
                         child: Align(
                           alignment: Alignment.bottomRight,
                           child: JustTheTooltip(

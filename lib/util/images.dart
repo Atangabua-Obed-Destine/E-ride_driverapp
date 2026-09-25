@@ -224,6 +224,7 @@ class Images {
   static const String warning = 'assets/image/warning.png';
   static const String biometricIcon = 'assets/image/biometric_icon.png';
   static const String biometricPassword = 'assets/image/biometric_password.png';
+  static const String availabilityIcon = 'assets/image/availability_icon.png';
 
   //svg
   static const String splashBgOne = 'assets/svg/splash_bg_one.svg';

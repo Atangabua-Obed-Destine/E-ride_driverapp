@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ride_sharing_user_app/common_widgets/image_widget.dart';
 import 'package:ride_sharing_user_app/features/map/controllers/map_controller.dart';
 import 'package:ride_sharing_user_app/features/map/screens/map_screen.dart';
 import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
+import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
 import 'package:ride_sharing_user_app/helper/date_converter.dart';
 import 'package:ride_sharing_user_app/helper/price_converter.dart';
 import 'package:ride_sharing_user_app/util/app_constants.dart';
@@ -69,15 +71,9 @@ class TripCard extends StatelessWidget {
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-                      child: Image.asset(height: 50,
-                        tripModel.type == AppConstants.parcel ?
-                        Images.parcel :
-                        tripModel.vehicleCategory != null ?
-                        tripModel.vehicleCategory!.type == "car"?
-                        Images.car :
-                        Images.bike :
-                        Images.car,
-                      ),
+                      child: tripModel.type == AppConstants.parcel ?
+                      Image.asset(height: 50, Images.parcel) :
+                      ImageWidget(height: 50, image: '${Get.find<SplashController>().config?.imageBaseUrl?.vehicleCategory}/${tripModel.vehicleCategory?.image}'),
                     ),
                   ),
 

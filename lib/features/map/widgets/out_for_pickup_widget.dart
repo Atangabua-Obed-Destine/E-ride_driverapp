@@ -47,7 +47,9 @@ class _OutForPickupWidgetState extends State<OutForPickupWidget> {
     Get.find<RiderMapController>().setSheetHeight(250, false);
     _keyboardVisibilityController = KeyboardVisibilityController();
     keyboardSubscription = _keyboardVisibilityController.onChange.listen((isVisible) {
-      if (!isVisible) {
+      if (isVisible) {
+        widget.expandableKey.currentState?.expand(duration: 500);
+      } else {
         widget.expandableKey.currentState?.contract(duration: 500);
       }
     });
