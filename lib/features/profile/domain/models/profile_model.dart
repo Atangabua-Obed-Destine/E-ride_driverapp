@@ -50,13 +50,15 @@ class ProfileInfo {
   double? levelUpRewardAmount;
   List<String>? documents;
   bool? isVerified;
-  bool? isSuspended;
-  String? suspendReason;
+  bool? isPaused;
+  String? pausedReason;
   String? triggerVerificationAt;
   bool? needVerification;
   List<ProfileAdditionalData>? additionalData;
   String? loggedInVia;
   String? gender;
+  int? pauseDuration;
+  AvailabilitySchedule? availabilitySchedule;
 
   ProfileInfo(
       {this.id,
@@ -87,13 +89,15 @@ class ProfileInfo {
         this.documents,
         this.reviewCount,
         this.isVerified,
-        this.isSuspended,
-        this.suspendReason,
+        this.isPaused,
+        this.pausedReason,
         this.triggerVerificationAt,
         this.needVerification,
         this.loggedInVia,
         this.additionalData,
         this.gender,
+        this.availabilitySchedule,
+        this.pauseDuration
 
       });
 
@@ -135,8 +139,8 @@ class ProfileInfo {
     }
     documents = json['other_documents']?.cast<String>();
     isVerified = json['is_verified'] != null ? (json['is_verified'].toString() == '1' || json['is_verified'].toString() == 'true') : null;
-    isSuspended = json['is_suspended'] != null ? (json['is_suspended'].toString() == '1' || json['is_suspended'].toString() == 'true') : null;
-    suspendReason = json['suspend_reason'];
+    isPaused = json['is_paused'] != null ? (json['is_paused'].toString() == '1' || json['is_paused'].toString() == 'true') : null;
+    pausedReason = json['pause_reason'];
     triggerVerificationAt = json['trigger_verification_at'];
     needVerification = json['need_verification'] != null ? (json['need_verification'].toString() == '1' || json['need_verification'].toString() == 'true') : null;
     loggedInVia = json['logged_in_via'];
@@ -147,6 +151,8 @@ class ProfileInfo {
       });
     }
     gender = json['gender'];
+    availabilitySchedule = json['availability_schedule'] != null ? AvailabilitySchedule.fromJson(json['availability_schedule']) : null;
+    pauseDuration = json['pause_duration'];
   }
 
 }
@@ -420,4 +426,53 @@ class TimeTrack {
     totalDriving = json['total_driving'] != null ? int.tryParse(json['total_driving'].toString()) : null;
   }
 
+}
+
+class AvailabilitySchedule {
+  bool? sameTimeForEveryDay;
+  List<Schedule>? schedule;
+
+  AvailabilitySchedule({this.sameTimeForEveryDay, this.schedule});
+
+  AvailabilitySchedule.fromJson(Map<String, dynamic> json) {
+    sameTimeForEveryDay = json['same_time_for_every_day'];
+    if (json['schedule'] != null) {
+      schedule = <Schedule>[];
+      json['schedule'].forEach((v) { schedule!.add(Schedule.fromJson(v)); });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['same_time_for_every_day'] = sameTimeForEveryDay;
+    if (schedule != null) {
+      data['schedule'] = schedule!.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class Schedule {
+  String? id;
+  int? day;
+  String? startTime;
+  String? endTime;
+
+  Schedule({this.id, this.day, this.startTime, this.endTime});
+
+  Schedule.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    day = json['day'];
+    startTime = json['start_time'];
+    endTime = json['end_time'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['day'] = day;
+    data['start_time'] = startTime;
+    data['end_time'] = endTime;
+    return data;
+  }
 }

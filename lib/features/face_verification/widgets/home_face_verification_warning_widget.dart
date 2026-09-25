@@ -46,7 +46,6 @@ class HomeFaceVerificationWarningWidget extends StatelessWidget {
             ]),
           const SizedBox(height: Dimensions.paddingSizeSmall),
 
-          if(Get.find<ProfileController>().profileInfo?.suspendReason == 'face_verification')
           RichText(text: TextSpan(
               text: '${'your_account_is_suspend_for_face_verification'.tr} ',
               style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall,color: Theme.of(context).textTheme.bodyMedium!.color),

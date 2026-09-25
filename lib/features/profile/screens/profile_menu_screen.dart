@@ -4,6 +4,7 @@ import 'package:flutter_switch/flutter_switch.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/common_widgets/confirmation_bottomsheet_widget.dart';
 import 'package:ride_sharing_user_app/features/auth/widgets/biometric_auth_bottom_sheet_widget.dart';
+import 'package:ride_sharing_user_app/features/availability/screens/availability_screen.dart';
 import 'package:ride_sharing_user_app/features/html/domain/html_enum_types.dart';
 import 'package:ride_sharing_user_app/features/profile/controllers/profile_controller.dart';
 import 'package:ride_sharing_user_app/features/refer_and_earn/screens/refer_and_earn_screen.dart';
@@ -51,6 +52,10 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
 
           ProfileMenuItem(icon: Images.message, title: 'message',
             onTap: ()=>  Get.to(()=> const ChatScreen()),
+          ),
+
+          ProfileMenuItem(icon: Images.availabilityIcon, title: 'availability',
+            onTap: ()=> Get.to(()=> const AvailabilityScreen()),
           ),
 
           ProfileMenuItem(icon: Images.destinationIcon, title: 'my_reviews',

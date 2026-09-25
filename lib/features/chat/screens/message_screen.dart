@@ -13,6 +13,7 @@ import 'package:ride_sharing_user_app/features/chat/widgets/message_bubble_widge
 import 'package:ride_sharing_user_app/common_widgets/app_bar_widget.dart';
 import 'package:ride_sharing_user_app/common_widgets/no_data_widget.dart';
 import 'package:ride_sharing_user_app/common_widgets/paginated_list_view_widget.dart';
+import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
 
 class MessageScreen extends StatefulWidget {
   final String channelId;
@@ -34,6 +35,13 @@ class _MessageScreenState extends State<MessageScreen> {
     Get.find<ChatController>().subscribeMessageChannel(widget.tripId);
     super.initState();
   }
+
+  String _formatRecordingDuration(Duration duration) {
+    final int minutes = duration.inMinutes;
+    final int seconds = duration.inSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -155,6 +163,75 @@ class _MessageScreenState extends State<MessageScreen> {
               /// Message Send field here.
 
               messageController.channelRideStatus ?
+              messageController.isRecordingVoice ?
+              Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: Dimensions.paddingSizeSmall, bottom: Dimensions.paddingSizeExtraLarge),
+                  child: InkWell(
+                    onTap: () => messageController.cancelVoiceRecording(),
+                    child: const Icon(Icons.delete_outline, color: Colors.red, size: 26),
+                  ),
+                ),
+
+                Expanded(child: Container(
+                  height: 45,
+                  margin: const EdgeInsets.only(
+                    left: Dimensions.paddingSizeSmall,
+                    right: Dimensions.paddingSizeSmall, bottom: Dimensions.paddingSizeExtraLarge,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).primaryColor),
+                    color: Theme.of(context).cardColor,
+                    borderRadius: const BorderRadius.all(Radius.circular(100)),
+                  ),
+                  child: Row(children: [
+                    Text(
+                      _formatRecordingDuration(messageController.recordingDuration),
+                      style: textMedium.copyWith(
+                        fontSize: Dimensions.fontSizeSmall,
+                        color: Theme.of(context).textTheme.bodyMedium!.color!.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    const SizedBox(width: Dimensions.paddingSizeSmall),
+
+                    Expanded(child: ClipRect(child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: messageController.waveformLevels.map((level) => Container(
+                        width: 3, height: 6 + (level * 22),
+                        margin: const EdgeInsets.symmetric(horizontal: 1),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      )).toList(),
+                    ))),
+                  ]),
+                )),
+
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).primaryColor),
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: const BorderRadius.all(Radius.circular(50)),
+                  ),
+                  margin: EdgeInsets.only(
+                    bottom: Dimensions.paddingSizeExtraLarge,
+                    right: Get.find<LocalizationController>().isLtr ? Dimensions.paddingSizeDefault : 0,
+                    left: Get.find<LocalizationController>().isLtr ? 0 : Dimensions.paddingSizeDefault,
+                  ),
+                  padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
+                  child: InkWell(
+                    onTap: () => messageController.stopAndSendVoiceRecording(widget.channelId, widget.tripId),
+                    child: Image.asset(
+                      Images.sendMessage,
+                      width: Dimensions.iconSizeMedium,
+                      height: Dimensions.iconSizeMedium,
+                      color: Theme.of(context).cardColor,
+                    ),
+                  ),
+                ),
+              ]) :
               Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
                 Expanded(child: Container(
                   margin: const EdgeInsets.only(
@@ -190,7 +267,7 @@ class _MessageScreenState extends State<MessageScreen> {
                             fontSize: 16,
                           ),
                         ),
-                        onChanged: (String newText) {},
+                        onChanged: (String newText) => messageController.update(),
                       )),
 
                       Padding(
@@ -232,6 +309,14 @@ class _MessageScreenState extends State<MessageScreen> {
                   SpinKitCircle(color: Theme.of(context).cardColor, size: 20) :
                   messageController.isPickedImage ?
                   SpinKitCircle(color: Theme.of(context).primaryColor, size: 20) :
+                  (Get.find<SplashController>().config?.voiceChatIsEnable == true
+                      && messageController.conversationController.text.trim().isEmpty
+                      && messageController.pickedImageFile!.isEmpty
+                      && messageController.otherFile == null) ?
+                  InkWell(
+                    onTap: () => messageController.startVoiceRecording(),
+                    child: Icon(Icons.mic_none_rounded, color: Theme.of(context).cardColor, size: Dimensions.iconSizeMedium),
+                  ) :
                   InkWell(
                     onTap: (){
                       if(messageController.conversationController.text.trim().isEmpty

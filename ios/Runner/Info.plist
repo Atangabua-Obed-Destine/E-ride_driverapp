@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>E-Ride Driver</string>
+	<string>DriveMond Driver</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>E-Ride Driver</string>
+	<string>DriveMond Driver</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -49,6 +49,8 @@
 	<string>This app need photo gallery access for taking photo for user profile picture.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>This app requires Face ID for secure authentication.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs microphone access to record voice messages in chat.</string>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<string>This app need location permission for tracking driver start to destination trip.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

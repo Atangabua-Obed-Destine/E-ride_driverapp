@@ -15,6 +15,7 @@ import 'package:ride_sharing_user_app/features/help_and_support/controllers/help
 import 'package:ride_sharing_user_app/features/home/screens/parcel_list_screen.dart';
 import 'package:ride_sharing_user_app/features/home/screens/ride_list_screen.dart';
 import 'package:ride_sharing_user_app/features/home/widgets/refund_alert_bottomsheet.dart';
+import 'package:ride_sharing_user_app/features/home/widgets/trip_cancel_bottomsheet.dart';
 import 'package:ride_sharing_user_app/features/html/domain/html_enum_types.dart';
 import 'package:ride_sharing_user_app/features/html/screens/policy_viewer_screen.dart';
 import 'package:ride_sharing_user_app/features/notification/widgets/receipt_confirmation_bottomsheet.dart';
@@ -183,6 +184,18 @@ class NotificationHelper {
           }else if(message.data['action'] == 'safety_problem_resolved'){
             Get.find<SafetyAlertController>().getSafetyAlertDetails(message.data['ride_request_id']);
 
+          }else if(message.data['action'] == 'auto_arrival_notification_driver_message'){
+            Get.find<RideController>().toggleShowDriverNearByTooltip(true);
+
+          }else if(message.data['action'] == 'trip_canceled_for_driver_identity_mismatch'){
+            Future.delayed(Duration(seconds: 1)).then((_){
+              Get.bottomSheet(TripCancelBottomSheet(
+                tripId: message.data['trip_readable_id'],
+                cancelledAt: message.data['trip_cancellation_time'],
+                reason: message.data['body'],
+              ));
+            });
+
           }
 
           ///If web socket Not connected
@@ -246,6 +259,18 @@ class NotificationHelper {
 
           }else if(message.data['action'] == 'safety_problem_resolved'){
             Get.find<SafetyAlertController>().getSafetyAlertDetails(message.data['ride_request_id']);
+
+          }else if(message.data['action'] == 'auto_arrival_notification_driver_message'){
+            Get.find<RideController>().toggleShowDriverNearByTooltip(true);
+
+          }else if(message.data['action'] == 'trip_canceled_for_driver_identity_mismatch'){
+            Future.delayed(Duration(seconds: 1)).then((_){
+              Get.bottomSheet(TripCancelBottomSheet(
+                tripId: message.data['trip_readable_id'],
+                cancelledAt: message.data['trip_cancellation_time'],
+                reason: message.data['body'],
+              ));
+            });
 
           }
 

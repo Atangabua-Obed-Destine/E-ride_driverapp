@@ -46,6 +46,7 @@ class RideController extends GetxController implements GetxService{
   TripDetail? tripDetail;
   JustTheController justTheController = JustTheController();
 
+  bool isShowDriverArrivalTooltip = false;
 
   void setRideId(String id){
     _rideId = id;
@@ -330,7 +331,9 @@ class RideController extends GetxController implements GetxService{
 
   String myDriveMode = '';
   RemainingDistanceModel? matchedMode;
-  List<RemainingDistanceModel>? remainingDistanceItem = [];
+  List<RemainingDistanceModel> remainingDistanceItem = [];
+
+
   Future<Response> remainingDistance(String tripId,{bool mapBound = false}) async {
     myDriveMode = Get.find<ProfileController>().profileInfo!.vehicle!.category!.type!;
     isLoading = true;
@@ -344,11 +347,11 @@ class RideController extends GetxController implements GetxService{
 
       remainingDistanceItem = [];
       response.body.forEach((distance) {
-        remainingDistanceItem!.add(RemainingDistanceModel.fromJson(distance));
+        remainingDistanceItem.add(RemainingDistanceModel.fromJson(distance));
 
       });
-      if(remainingDistanceItem != null && remainingDistanceItem!.isNotEmpty){
-        matchedMode =  remainingDistanceItem![0];
+      if(remainingDistanceItem.isNotEmpty){
+        matchedMode =  remainingDistanceItem[0];
       }
 
       if(matchedMode != null && (matchedMode!.distance! * 1000) <= 100 && tripDetail != null && tripDetail!.currentStatus == 'pending' ){
@@ -610,11 +613,11 @@ class RideController extends GetxController implements GetxService{
 
       remainingDistanceItem = [];
       response.body.forEach((distance) {
-        remainingDistanceItem!.add(RemainingDistanceModel.fromJson(distance));
+        remainingDistanceItem.add(RemainingDistanceModel.fromJson(distance));
       });
 
-      if(remainingDistanceItem != null && remainingDistanceItem!.isNotEmpty){
-        matchedMode =  remainingDistanceItem![0];
+      if(remainingDistanceItem.isNotEmpty){
+        matchedMode =  remainingDistanceItem[0];
       }
 
     }else{
@@ -650,6 +653,11 @@ class RideController extends GetxController implements GetxService{
     }
     update();
     return response;
+  }
+
+  void toggleShowDriverNearByTooltip(bool action){
+    isShowDriverArrivalTooltip = action;
+    update();
   }
 
 }

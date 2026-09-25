@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
     <queries>
         <intent>
@@ -28,14 +29,14 @@
 
    <application
        android:requestLegacyExternalStorage="true"
-       android:label="E-Ride Driver"
+       android:label="DriveMond Driver"
        android:name="${applicationName}"
        android:extractNativeLibs="true"
        android:icon="@mipmap/ic_launcher"
        android:allowBackup="false"
-       android:usesCleartextTraffic="true"
+       android:usesCleartextTraffic="false"
        android:fullBackupOnly="false">
-       <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyBlrnYeiGNzQByKArJo42VJTSbD-NDzCb0" />
+       <meta-data android:name="com.google.android.geo.API_KEY" android:value="YOUR_MAP_KEY_HERE" />
        <meta-data android:name="com.google.android.gms.version"
            android:value="@integer/google_play_services_version" />
        <!-- Necessary for apps that target Android 9.0 or higher -->

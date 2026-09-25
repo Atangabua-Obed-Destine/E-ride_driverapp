@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ride_sharing_user_app/helper/extension_helper.dart';
 import 'package:ride_sharing_user_app/helper/responsive_helper.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
@@ -53,4 +55,43 @@ String titleFormatedName(String input) {
   return input.replaceAll('_', ' ').split(' ').where((word) => word.isNotEmpty).map((word) {
     return word[0].toUpperCase() + word.substring(1).toLowerCase();
   }).join(' ');
+}
+
+void showCustomSnackBarWithButton(String message, {bool isError = true, int seconds = 3,String? btnText, VoidCallback? onTap}) {
+  if (Get.isSnackbarOpen) {
+    Get.closeCurrentSnackbar();
+  }
+  Get.showSnackbar(GetSnackBar(
+    dismissDirection: DismissDirection.horizontal,
+    margin: const EdgeInsets.all(Dimensions.paddingSizeSmall).copyWith(
+      right: ResponsiveHelper.isDesktop ? Get.context!.width*0.7 : Dimensions.paddingSizeSmall,
+    ),
+    duration: Duration(seconds: seconds),
+    backgroundColor: Get.isDarkMode ? Colors.white : Theme.of(Get.context!).textTheme.titleMedium!.color!,
+    borderRadius: Dimensions.paddingSizeSmall,
+    messageText: Row(children: [
+      Image.asset(isError ? Images.errorMessageIcon : Images.successMessageIcon,height: 20,width: 20,),
+
+      const SizedBox(width: Dimensions.paddingSize),
+      Expanded(child: RichText(text: TextSpan(
+        text: '$message ', style: textMedium.copyWith(color: Get.isDarkMode ? Theme.of(Get.context!).textTheme.bodySmall!.color : Colors.white),
+        children: [
+          TextSpan(
+            recognizer: TapGestureRecognizer()..onTap = (){
+              Get.closeCurrentSnackbar();
+              onTap?.call();
+            },
+              text: btnText,
+              style: textMedium.copyWith(
+                  color: Get.context!.customThemeColors.infoColor,
+                decorationColor: Get.context!.customThemeColors.infoColor,
+                decoration: TextDecoration.underline
+              )
+          )
+        ]
+      ))),
+
+    ]),
+
+  ));
 }

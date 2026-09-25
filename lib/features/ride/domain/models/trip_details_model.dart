@@ -89,6 +89,7 @@ class TripDetail {
   String? driverLocationUrl;
   List<String>? pickupProofImages;
   List<String>? deliveryProofImages;
+  String? cancellationReason;
   bool? isParcelDeliveryProofEnable;
 
   TripDetail(
@@ -163,7 +164,8 @@ class TripDetail {
         this.driverLocationUrl,
         this.pickupProofImages,
         this.deliveryProofImages,
-        this.isParcelDeliveryProofEnable
+        this.isParcelDeliveryProofEnable,
+        this.cancellationReason
       });
 
   TripDetail.fromJson(Map<String, dynamic> json) {
@@ -254,6 +256,7 @@ class TripDetail {
     driverLocationUrl = json['driver_location_url'];
     pickupProofImages = json['pickup_proof_images']?.cast<String>();
     deliveryProofImages = json['delivery_proof_images']?.cast<String>();
+    cancellationReason = json['cancellation_reason'];
     isParcelDeliveryProofEnable = json['is_parcel_delivery_proof_enabled'] != null ? (json['is_parcel_delivery_proof_enabled'].toString() == '1' || json['is_parcel_delivery_proof_enabled'].toString() == 'true') : null;
   }
 

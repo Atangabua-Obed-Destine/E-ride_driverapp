@@ -46,7 +46,9 @@ class _AcceptedRiderWidgetState extends State<AcceptedRiderWidget> {
     Get.find<RiderMapController>().setSheetHeight(250, false);
     _keyboardVisibilityController = KeyboardVisibilityController();
     keyboardSubscription = _keyboardVisibilityController.onChange.listen((isVisible) {
-      if (!isVisible) {
+      if (isVisible) {
+        widget.expandableKey.currentState?.expand();
+      } else {
         widget.expandableKey.currentState?.contract(duration: 500);
       }
     });

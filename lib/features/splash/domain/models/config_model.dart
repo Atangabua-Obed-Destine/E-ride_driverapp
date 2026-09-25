@@ -80,6 +80,9 @@ class ConfigModel {
   CustomerLoginOptions? driverLoginOptions;
   bool? isRealTimeLocationShareEnable;
   bool? isParcelProofOn;
+  bool? voiceChatIsEnable;
+  int? notificationArriveTime;
+  bool? enableAutoArrivalNotification;
   List<AdditionalFieldModel>? additionalFieldList;
 
   ConfigModel({
@@ -162,7 +165,10 @@ class ConfigModel {
     this.driverLoginOptions,
     this.isRealTimeLocationShareEnable,
     this.isParcelProofOn,
-    this.additionalFieldList
+    this.voiceChatIsEnable,
+    this.additionalFieldList,
+    this.notificationArriveTime,
+    this.enableAutoArrivalNotification
 
   });
 
@@ -171,9 +177,9 @@ class ConfigModel {
     logo = json['logo'];
     bidOnFare = json['bid_on_fare'] != null ? (json['bid_on_fare'].toString() == '1' || json['bid_on_fare'].toString() == 'true') : null;
     if(json['country_code'] != null && json['country_code'] != ""){
-      countryCode = json['country_code']??'CM';
+      countryCode = json['country_code']??'BD';
     }else{
-      countryCode = 'CM';
+      countryCode = 'BD';
     }
     businessAddress = json['business_address'];
     businessContactPhone = json['business_contact_phone'];
@@ -274,12 +280,15 @@ class ConfigModel {
     driverLoginOptions = json['driver_login_options'] != null ? CustomerLoginOptions.fromJson(json['driver_login_options']) : null;
     isRealTimeLocationShareEnable = json['is_real_time_location_sharing_enabled'] != null ? (json['is_real_time_location_sharing_enabled'].toString() == '1' || json['is_real_time_location_sharing_enabled'].toString() == 'true') : null;
     isParcelProofOn = json['enable_parcel_delivery_proof'] != null ? (json['enable_parcel_delivery_proof'].toString() == '1' || json['enable_parcel_delivery_proof'].toString() == 'true') : null;
+    voiceChatIsEnable = json['voice_message_status'] != null ? (json['voice_message_status'].toString() == '1' || json['voice_message_status'].toString() == 'true') : false;
+    enableAutoArrivalNotification = json['auto_arrival_notification'] != null ? (json['auto_arrival_notification'].toString() == '1' || json['auto_arrival_notification'].toString() == 'true') : false;
     if (json['driver_additional_registration_form_fields'] != null) {
       additionalFieldList = <AdditionalFieldModel>[];
       json['driver_additional_registration_form_fields'].forEach((v) {
         additionalFieldList!.add(AdditionalFieldModel.fromJson(v));
       });
     }
+    notificationArriveTime = json['auto_arrival_notification_time'];
   }
 
 }

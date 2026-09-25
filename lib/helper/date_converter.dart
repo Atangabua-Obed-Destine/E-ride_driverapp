@@ -68,6 +68,11 @@ class DateConverter {
     return DateFormat('HH:mm').parse(time);
   }
 
+  static String convertDateTimeToString(DateTime time) {
+    return DateFormat('HH:mm').format(time);
+  }
+
+
   static String isoDateTimeStringToLocalTime(String dateTime){
     return DateFormat(_timeFormatter()).format(isoStringToLocalDate(dateTime));
   }
