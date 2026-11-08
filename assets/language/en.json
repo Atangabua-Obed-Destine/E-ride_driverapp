@@ -1138,5 +1138,6 @@
   "pickup": "Pickup",
   "dyna": "Dyna",
   "truck": "Truck",
-  "move_deposit_received_line": "The customer paid the @amount deposit to E-Ride (booking fee). Collect the full price you agree."
+  "move_deposit_received_line": "The customer paid the @amount deposit to E-Ride (booking fee). Collect the full price you agree.",
+  "too_many_requests_try_again": "You're going a bit fast. Please wait a moment and try again."
 }

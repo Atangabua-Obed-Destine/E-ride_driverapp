@@ -75,6 +75,8 @@ class HomeScreenHelper {
 
 
   void checkAndShowBottomSheets(){
+    // Profile not loaded (no network): nothing is known about the vehicle yet.
+    if(Get.find<ProfileController>().profileInfo == null) return;
     if(Get.find<ProfileController>().profileInfo?.vehicle == null  &&
         Get.find<ProfileController>().isFirstTimeShowBottomSheet){
 

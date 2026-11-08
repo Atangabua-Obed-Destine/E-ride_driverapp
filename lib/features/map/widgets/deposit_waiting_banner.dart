@@ -25,7 +25,7 @@ class DepositWaitingBanner extends StatefulWidget {
 
 class _DepositWaitingBannerState extends State<DepositWaitingBanner> {
   Timer? _timer;
-  bool _refreshedAtZero = false;
+  DateTime? _lastCheck;
 
   @override
   void initState() {
@@ -34,10 +34,18 @@ class _DepositWaitingBannerState extends State<DepositWaitingBanner> {
       if (!mounted) return;
       setState(() {});
       final deposit = widget.trip.deposit;
-      // Time ran out: the server cancels the trip within seconds; read it again.
-      if (deposit != null && deposit.isAwaiting && deposit.timeLeft == Duration.zero && !_refreshedAtZero) {
-        _refreshedAtZero = true;
-        Get.find<RideController>().getRideDetails(widget.trip.id!);
+      // Time ran out: the server cancels the trip on its next sweep (up to a minute
+      // or so later). Read it again every 10 s until it does, not just once.
+      if (deposit != null && deposit.isAwaiting && deposit.timeLeft == Duration.zero) {
+        final DateTime now = DateTime.now();
+        if (_lastCheck == null || now.difference(_lastCheck!) >= const Duration(seconds: 10)) {
+          _lastCheck = now;
+          // Once the trip is gone, stop: while the app is hidden the move to the
+          // dashboard only completes when it comes back, and this kept asking.
+          Get.find<RideController>().checkTripStillMine(widget.trip.id!).then((bool mine) {
+            if (!mine) _timer?.cancel();
+          });
+        }
       }
     });
   }

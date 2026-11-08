@@ -101,10 +101,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final RideController rideController = Get.find<RideController>();
 
     Get.find<ProfileController>().getCategoryList(1);
-    Get.find<ProfileController>().getProfileInfo();
+    // The sheets read the profile: decide once it has loaded. Checked right away, a
+    // profile still loading looked like "no vehicle" and asked to add one.
+    Get.find<ProfileController>().getProfileInfo().then((_) => HomeScreenHelper().checkAndShowBottomSheets());
     Get.find<ProfileController>().getDailyLog();
     rideController.getLastRideDetail();
-    HomeScreenHelper().checkAndShowBottomSheets();
     await loadOngoingList();
 
     Get.find<ProfileController>().getProfileLevelInfo();

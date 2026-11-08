@@ -31,6 +31,7 @@ import 'package:ride_sharing_user_app/features/ride/domain/models/pending_ride_r
 import 'package:ride_sharing_user_app/features/ride/domain/models/remaining_distance_model.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/models/trip_details_model.dart';
 import 'package:ride_sharing_user_app/features/trip/screens/payment_received_screen.dart';
+import 'package:ride_sharing_user_app/features/dashboard/screens/dashboard_screen.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
 
@@ -128,6 +129,27 @@ class RideController extends GetxController implements GetxService{
     }
     update();
     return response;
+  }
+
+  /// Reads the trip on screen again. A trip that is cancelled, or no longer this
+  /// driver's (the deposit was not paid, it was reassigned: the server then answers
+  /// 403), sends the driver back to the dashboard. Without this the app stayed on
+  /// "Waiting for the deposit" at 0:00 when the cancel arrived while it was hidden.
+  Future<bool> checkTripStillMine(String tripId) async {
+    final Response response = await getRideDetails(tripId, fromHomeScreen: true);
+    final bool lost = response.statusCode == 403 ||
+        (response.statusCode == 200 && tripDetail?.id == tripId && tripDetail?.currentStatus == AppConstants.cancelled);
+    if (lost && (tripDetail == null || tripDetail?.id == tripId)) {
+      leaveLostTrip();
+    }
+    return !lost;
+  }
+
+  void leaveLostTrip() {
+    tripDetail = null;
+    Get.find<RiderMapController>().setRideCurrentState(RideState.initial);
+    update();
+    Get.offAll(() => const DashboardScreen());
   }
 
   Future<Response> uploadScreenShots(String tripId, XFile file) async {
@@ -349,8 +371,15 @@ class RideController extends GetxController implements GetxService{
       PusherHelper().tripPaymentSuccessful(tripDetail!.id!);
 
     }else{
-      showCustomSnackBar('${response.body['errors'][0]['error_code']}',subMessage: '${response.body['errors'][0]['message']}');
+      // Reset first: a refusal without an errors entry ("wait for the deposit",
+      // "go to the pickup") threw here and left the Start button on a spinner.
       isPinVerificationLoading = false;
+      final dynamic errors = response.body is Map ? response.body['errors'] : null;
+      if (errors is List && errors.isNotEmpty && errors[0] is Map) {
+        showCustomSnackBar('${errors[0]['error_code']}', subMessage: '${errors[0]['message']}');
+      } else {
+        ApiChecker.checkApi(response);
+      }
     }
     update();
     return response;

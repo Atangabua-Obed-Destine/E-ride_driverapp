@@ -1138,5 +1138,6 @@
   "pickup": "Pick-up",
   "dyna": "Dyna",
   "truck": "Camion",
-  "move_deposit_received_line": "Le client a payé l'acompte de @amount à E-Ride (frais de réservation). Encaissez tout le prix convenu."
+  "move_deposit_received_line": "Le client a payé l'acompte de @amount à E-Ride (frais de réservation). Encaissez tout le prix convenu.",
+  "too_many_requests_try_again": "Vous allez un peu vite. Patientez un instant puis réessayez."
 }

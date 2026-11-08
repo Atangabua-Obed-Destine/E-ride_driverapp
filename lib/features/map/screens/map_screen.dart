@@ -375,7 +375,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver{
   }
 
   void _setMapCurrentRoutes() async{
-    await  Get.find<RideController>().getRideDetails(Get.find<RideController>().tripDetail?.id ?? '');
+    final String? tripId = Get.find<RideController>().tripDetail?.id;
+    if (tripId == null) return;
+    final RideState state = Get.find<RiderMapController>().currentRideState;
+    if ([RideState.accepted, RideState.outForPickup, RideState.ongoing].contains(state)) {
+      // An accepted trip cancelled or taken from this driver while the app was
+      // hidden: dashboard. (A request not accepted yet also answers 403: skipped.)
+      if (!await Get.find<RideController>().checkTripStillMine(tripId)) return;
+    } else {
+      await Get.find<RideController>().getRideDetails(tripId);
+    }
     TripDetail? tripDetail = Get.find<RideController>().tripDetail;
     if (tripDetail?.currentStatus == AppConstants.accepted || tripDetail?.currentStatus == AppConstants.outForPickup) {
       if(tripDetail?.currentStatus == AppConstants.outForPickup){
