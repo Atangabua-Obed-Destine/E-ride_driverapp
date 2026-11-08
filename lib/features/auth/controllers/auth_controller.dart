@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:app_settings/app_settings.dart';
-import 'package:country_code_picker/country_code_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -15,6 +14,7 @@ import 'package:ride_sharing_user_app/features/auth/domain/models/additional_fie
 import 'package:ride_sharing_user_app/features/auth/domain/services/auth_service_interface.dart';
 import 'package:ride_sharing_user_app/features/auth/screens/otp_sign_up-screen_1.dart';
 import 'package:ride_sharing_user_app/features/auth/widgets/manual_auth_waring_bottom_sheet_widget.dart';
+import 'package:ride_sharing_user_app/features/help_and_support/screens/help_and_support_screen.dart';
 import 'package:ride_sharing_user_app/features/map/controllers/otp_time_count_controller.dart';
 import 'package:ride_sharing_user_app/features/out_of_zone/controllers/out_of_zone_controller.dart';
 import 'package:ride_sharing_user_app/features/safety_setup/controllers/safety_alert_controller.dart';
@@ -85,7 +85,7 @@ class AuthController extends GetxController with WidgetsBindingObserver implemen
   List<MultipartDocument> otherDocuments = [];
   FilePickerResult? _otherFile;
   PlatformFile? objFile;
-  String countryDialCode = '+880';
+  String countryDialCode = '+237';
   bool isParcelShare = true;
   bool isRideShare = true;
   String selectedGender = 'select_gender';
@@ -218,6 +218,10 @@ class AuthController extends GetxController with WidgetsBindingObserver implemen
 
     Response? response = await authServiceInterface.login( phone: fullPhoneNumber, password: password);
 
+    if (Get.isSnackbarOpen) {
+      Get.closeCurrentSnackbar();
+    }
+
     if(response!.statusCode == 200){
       disposeAdditionalFields();
       Map map = response.body;
@@ -253,7 +257,17 @@ class AuthController extends GetxController with WidgetsBindingObserver implemen
       Get.bottomSheet(ManualAuthWaringBottomSheetWidget(phoneNumber: phone, from: VerificationForm.resetPassword));
     }else{
       _isLoading = false;
-      ApiChecker.checkApi(response);
+      if(response.body['response_code'] == 'default_user_under_review_or_disabled_401'){
+        showCustomSnackBarWithButton(
+          seconds: 10,
+          response.body['message'], btnText: 'contact_with_admin'.tr,
+          onTap: (){
+            Get.to(()=> HelpAndSupportScreen());
+          }
+        );
+      }else{
+        ApiChecker.checkApi(response);
+      }
     }
     _isLoading = false;
     update();
@@ -771,7 +785,7 @@ class AuthController extends GetxController with WidgetsBindingObserver implemen
         _additionalFieldControllers[field.id] = TextEditingController();
         _additionalFieldFocusNodes[field.id] = FocusNode();
         if (field.fieldType == AdditionalFieldType.phone) {
-          _additionalFieldPhoneCountryCodes[field.id] = CountryCode.fromCountryCode(Get.find<SplashController>().config!.countryCode!).dialCode ?? '+880';
+          _additionalFieldPhoneCountryCodes[field.id] = Get.find<SplashController>().countryDialCode;
         }
       }
     }

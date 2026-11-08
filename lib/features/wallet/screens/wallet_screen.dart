@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/features/wallet/widgets/cash_in_hand_warning_widget.dart';
 import 'package:ride_sharing_user_app/features/wallet/widgets/history_list_widget.dart';
 import 'package:ride_sharing_user_app/features/wallet/widgets/transaction_card_button_widget.dart';
-import 'package:ride_sharing_user_app/helper/responsive_helper.dart';
 import 'package:ride_sharing_user_app/localization/localization_controller.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
@@ -163,7 +162,7 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
           CashInHandWarningWidget() : const SizedBox();
         }),
 
-        Positioned(top: Get.height * (GetPlatform.isIOS ? ResponsiveHelper.isTab ? 0.08 : 0.13 :  0.10),
+        Positioned(top: AppBarWidget.overlayTop(context),
           child: GetBuilder<WalletController>(builder: (walletController) {
             return Padding(padding: const EdgeInsets.only(left: Dimensions.paddingSizeSmall),
               child: SizedBox(

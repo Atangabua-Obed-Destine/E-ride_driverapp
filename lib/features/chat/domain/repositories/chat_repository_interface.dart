@@ -11,4 +11,8 @@ abstract class ChatRepositoryInterface implements RepositoryInterface {
   Future<Response> getConversation(String channelId,int offset);
   Future<Response> findChannelRideStatus(String channelId);
   Future<Response> sendMessage(String message,String channelID, String tripId, List<MultipartBody> file, PlatformFile? platformFile);
+
+  Future<Response> markChatRead(String channelId);
+  Future<Response> sendTyping(String channelId, {bool typing = true});
+  Future<Response> getUnreadSummary();
 }

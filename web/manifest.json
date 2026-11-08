@@ -1,11 +1,11 @@
 {
-    "name": "ride_sharing_user_app",
-    "short_name": "ride_sharing_user_app",
+    "name": "E-Ride Driver",
+    "short_name": "E-Ride Driver",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A ride sharing Flutter project.",
+    "description": "E-Ride driver app by I-NNOVA.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

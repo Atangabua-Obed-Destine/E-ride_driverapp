@@ -1,7 +1,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:ride_sharing_user_app/helper/responsive_helper.dart';
 import 'package:ride_sharing_user_app/localization/localization_controller.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/features/profile/controllers/profile_controller.dart';
@@ -78,7 +77,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
             ]),
 
             Positioned(
-              top: Get.height * (GetPlatform.isIOS ? ResponsiveHelper.isTab ? 0.10 : 0.14 :  0.11), left: Dimensions.paddingSizeSmall,
+              top: AppBarWidget.overlayTop(context), left: Dimensions.paddingSizeSmall,
               child: SizedBox(
                 height: Get.find<LocalizationController>().isLtr ? 45 : 50,
                 child: ListView.builder(

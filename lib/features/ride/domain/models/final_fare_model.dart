@@ -1,3 +1,4 @@
+import 'package:ride_sharing_user_app/features/ride/domain/models/trip_deposit_model.dart';
 class FinalFareModel {
   String? responseCode;
   String? message;
@@ -63,6 +64,11 @@ class FinalFare {
   double? idleTime;
   double? actualTime;
   double? estimatedTime;
+  /// The customer's booking deposit, when the trip asked for one.
+  TripDeposit? deposit;
+  /// What is left to collect once the deposit counts toward the fare.
+  double? amountDue;
+  bool isMove = false;
   String? rideCompleteTime;
   String? parcelCompleteTime;
   String? rideStartTime;
@@ -178,7 +184,9 @@ class FinalFare {
     rideStartTime = json['ride_start_time'];
     parcelStartTime = json['parcel_start_time'];
     parcelCompleteTime = json['parcel_complete_time'];
-
+    deposit = TripDeposit.fromJson(json['deposit']);
+    amountDue = double.tryParse('${json['amount_due']}');
+    isMove = json['is_move'] == true;
   }
 
 }

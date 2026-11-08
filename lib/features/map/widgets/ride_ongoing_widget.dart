@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
+import 'package:ride_sharing_user_app/features/ride/widgets/move_widgets.dart';
 import 'package:ride_sharing_user_app/common_widgets/button_widget.dart';
 import 'package:ride_sharing_user_app/common_widgets/custom_date_picker.dart';
 import 'package:ride_sharing_user_app/common_widgets/custom_time_picker.dart';
@@ -314,6 +315,9 @@ class _OngoingTripWidget extends StatelessWidget {
               ),
             ),
 
+            if (rideController.tripDetail!.isMove)
+              MoveLoadCard(trip: rideController.tripDetail!, margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault))
+            else
             Padding(
               padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
               child: Container(
@@ -342,7 +346,7 @@ class _OngoingTripWidget extends StatelessWidget {
               ),
             ),
 
-            if (rideController.tripDetail!.note != null)
+            if (rideController.tripDetail!.note != null && !rideController.tripDetail!.isMove)
               Padding(
                 padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
                 child: Text(
@@ -351,7 +355,7 @@ class _OngoingTripWidget extends StatelessWidget {
                 ),
               ),
 
-            if (rideController.tripDetail!.note != null)
+            if (rideController.tripDetail!.note != null && !rideController.tripDetail!.isMove)
               Text(
                 rideController.tripDetail!.note!,
                 style: textRegular.copyWith(color: Theme.of(context).hintColor),
@@ -369,12 +373,14 @@ class _OngoingTripWidget extends StatelessWidget {
                 ),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Text(
-                    '${'who_will_pay'.tr}?',
+                    rideController.tripDetail!.paymentStatus == AppConstants.paid ? 'payment'.tr : '${'who_will_pay'.tr}?',
                     style: textRegular.copyWith(color: Colors.white),
                   ),
 
                   Text(
-                    rideController.tripDetail!.parcelInformation!.payer!.tr,
+                    rideController.tripDetail!.paymentStatus == AppConstants.paid
+                        ? 'prepaid_do_not_collect'.tr
+                        : rideController.tripDetail!.parcelInformation!.payer!.tr,
                     style: textMedium.copyWith(color: Colors.white),
                   )
                 ]),
@@ -402,9 +408,9 @@ class _OngoingTripWidget extends StatelessWidget {
               const SizedBox(height: Dimensions.paddingSizeSmall)
             ],
 
-            (rideController.tripDetail!.isPaused!) ?
-            const SizedBox() :
-            (!rideController.tripDetail!.isPaused! && rideController.tripDetail!.type != AppConstants.parcel) ?
+            // While paused the driver can still complete: the server ends the
+            // pause and charges it. Cancelling waits until the trip resumes.
+            (rideController.tripDetail!.type != AppConstants.parcel) ?
             Column(children: [
               SliderButton(
                 action: () {
@@ -430,6 +436,7 @@ class _OngoingTripWidget extends StatelessWidget {
                 backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
                 baseColor: Theme.of(context).primaryColor,
               ),
+              if (!rideController.tripDetail!.isPaused!) ...[
               const SizedBox(height: Dimensions.paddingSizeSmall),
 
               SliderButton(
@@ -457,6 +464,7 @@ class _OngoingTripWidget extends StatelessWidget {
                 backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
                 baseColor: Theme.of(context).colorScheme.error,
               ),
+              ],
 
             ]) :
             Column(children: [

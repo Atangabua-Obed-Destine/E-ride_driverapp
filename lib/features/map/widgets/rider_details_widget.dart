@@ -1,3 +1,6 @@
+import 'package:ride_sharing_user_app/common_widgets/call_options_sheet.dart';
+import 'package:ride_sharing_user_app/common_widgets/unread_badge.dart';
+import 'package:ride_sharing_user_app/features/chat/controllers/chat_inbox_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
@@ -80,16 +83,21 @@ class RiderDetailsWidget extends StatelessWidget {
             onTap : () => Get.find<ChatController>().createChannel(
               rideController.tripDetail!.customer!.id!,tripId: rideController.tripDetail!.id,
             ),
-            child: SizedBox(width: Dimensions.iconSizeLarge,
-              child: Image.asset(Images.customerMessage, color: Theme.of(context).primaryColor),
-            ),
+            child: GetBuilder<ChatInboxController>(builder: (inbox) => UnreadBadge(
+              count: inbox.unreadForTrip(rideController.tripDetail?.id),
+              offset: const Offset(-9, -8),
+              child: SizedBox(width: Dimensions.iconSizeLarge,
+                child: Image.asset(Images.customerMessage, color: Theme.of(context).primaryColor),
+              ),
+            )),
           ),
 
           Container(width: 1,height: 25, color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.15)),
 
           InkWell(
-            onTap: ()=> Get.find<SplashController>().sendMailOrCall(
-              "tel:${rideController.tripDetail!.customer!.phone}", false,
+            onTap: () => CallOptionsSheet.show(
+              phone: rideController.tripDetail?.customer?.phone,
+              name: '${rideController.tripDetail?.customer?.firstName ?? ''} ${rideController.tripDetail?.customer?.lastName ?? ''}',
             ),
             child: SizedBox(width: Dimensions.iconSizeLarge,
               child: Image.asset(Images.customerCall, color: Theme.of(context).primaryColor),

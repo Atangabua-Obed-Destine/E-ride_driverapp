@@ -77,10 +77,7 @@ class LoginHelper{
         }
 
       }else{
-        if(Get.find<SplashController>().config!.maintenanceMode != null &&
-            Get.find<SplashController>().config!.maintenanceMode!.maintenanceStatus == 1 &&
-            Get.find<SplashController>().config!.maintenanceMode!.selectedMaintenanceSystem!.driverApp == 1
-        ){
+        if(Get.find<SplashController>().isUnderMaintenance){
           Get.offAll(() => const MaintenanceScreen());
         }else{
           checkLoginMedium();

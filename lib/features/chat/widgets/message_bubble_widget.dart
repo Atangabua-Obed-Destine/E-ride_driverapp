@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:ride_sharing_user_app/common_widgets/chat_kit.dart';
 import 'package:ride_sharing_user_app/common_widgets/popup_banner/popup_banner.dart';
 import 'package:ride_sharing_user_app/helper/date_converter.dart';
 import 'package:ride_sharing_user_app/localization/localization_controller.dart';
@@ -10,16 +11,20 @@ import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
 import 'package:ride_sharing_user_app/features/chat/domain/models/message_model.dart';
+import 'package:ride_sharing_user_app/features/chat/widgets/audio_message_widget.dart';
 import 'package:ride_sharing_user_app/features/profile/controllers/profile_controller.dart';
 import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
 import 'package:ride_sharing_user_app/common_widgets/image_widget.dart';
+import 'package:ride_sharing_user_app/util/app_constants.dart';
 
 class ConversationBubbleWidget extends StatefulWidget {
   final Message message;
   final Message? previousMessage;
   final int index;
   final int length;
-  const ConversationBubbleWidget({super.key,  required this.message,  this.previousMessage, required this.index, required this.length});
+  /// Called when a message that failed to send is tapped.
+  final VoidCallback? onRetry;
+  const ConversationBubbleWidget({super.key,  required this.message,  this.previousMessage, required this.index, required this.length, this.onRetry});
   @override
   State<ConversationBubbleWidget> createState() => _ConversationBubbleWidgetState();
 }
@@ -34,8 +39,11 @@ class _ConversationBubbleWidgetState extends State<ConversationBubbleWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final List<ConversationFiles> audioFiles = widget.message.conversationFiles!.where((ConversationFiles file) => _isAudioFile(file.fileType)).toList();
+    final List<ConversationFiles> nonAudioFiles = widget.message.conversationFiles!.where((ConversationFiles file) => !_isAudioFile(file.fileType)).toList();
+
     images = [];
-     for (var element in widget.message.conversationFiles!) {
+     for (var element in nonAudioFiles) {
       images.add('${Get.find<SplashController>().config!.imageBaseUrl!.conversation}/${element.fileName ?? ''}');
      }
     return Column(crossAxisAlignment: (widget.message.user!.id! == Get.find<ProfileController>().driverId) ?
@@ -77,32 +85,70 @@ class _ConversationBubbleWidgetState extends State<ConversationBubbleWidget> {
                     mainAxisSize: MainAxisSize.min, children: [
                       if(widget.message.message != null)
                       Flexible(child: Padding(padding: (widget.message.user!.id! == Get.find<ProfileController>().driverId) ? EdgeInsets.only(left:Get.width *0.15 ) :  EdgeInsets.only(right:Get.width *0.1),
-                        child: Container(
-                            decoration: BoxDecoration(
-                              color: (widget.message.user!.id! == Get.find<ProfileController>().driverId)?
-                              Theme.of(context).hintColor.withValues(alpha: 0.20) : Theme.of(context).hintColor.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(10)),
-                            child:  Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-                              child: Text(widget.message.message??'', style: textRegular.copyWith(),))),
+                        child: Builder(builder: (context) {
+                          final bool isMe = widget.message.user!.id! == Get.find<ProfileController>().driverId;
+                          return GestureDetector(
+                            onTap: widget.message.isFailed ? widget.onRetry : null,
+                            child: AnimatedOpacity(
+                              duration: const Duration(milliseconds: 200),
+                              opacity: widget.message.isPending ? 0.75 : 1,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isMe ? Theme.of(context).primaryColor : (Get.isDarkMode ? const Color(0xFF2C2C2E) : Colors.white),
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(18),
+                                    topRight: const Radius.circular(18),
+                                    bottomLeft: Radius.circular(isMe ? 18 : 6),
+                                    bottomRight: Radius.circular(isMe ? 6 : 18),
+                                  ),
+                                  boxShadow: isMe ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  child: Text(widget.message.message??'', style: TextStyle(
+                                    color: isMe ? Colors.white : (Get.isDarkMode ? Colors.white : const Color(0xFF1C1C1E)),
+                                    fontSize: 15,
+                                    height: 1.3,
+                                  )),
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
                       )),
 
 
                       if( widget.message.message != null) const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-                      widget.message.conversationFiles!.isNotEmpty?
-                      SizedBox(width: widget.message.conversationFiles!.length < 4 ? context.width : context.width *0.53,
+                      if(audioFiles.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: (widget.message.user!.id! == Get.find<ProfileController>().driverId) ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                        children: audioFiles.map((ConversationFiles file) => Padding(
+                          padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeExtraSmall),
+                          child: AudioMessageWidget(
+                            audioUrl: '${Get.find<SplashController>().config!.imageBaseUrl!.conversation}/${file.fileName ?? ''}',
+                            fileName: file.fileName ?? 'audio.m4a',
+                            isMe: widget.message.user!.id! == Get.find<ProfileController>().driverId,
+                          ),
+                        )).toList(),
+                      ),
+
+                      if(audioFiles.isNotEmpty && nonAudioFiles.isNotEmpty) const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+
+                      nonAudioFiles.isNotEmpty?
+                      SizedBox(width: nonAudioFiles.length < 4 ? context.width : context.width *0.53,
                         child: Directionality(textDirection:Get.find<LocalizationController>().isLtr ? (widget.message.user!.id! == Get.find<ProfileController>().driverId) ?
                           TextDirection.rtl: TextDirection.ltr : (widget.message.user!.id! == Get.find<ProfileController>().driverId) ?TextDirection.ltr : TextDirection.rtl,
                           child: GridView.builder(padding: EdgeInsets.zero,
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                               childAspectRatio: 1,
-                              crossAxisCount: widget.message.conversationFiles!.length < 4 ? 3 : 2,
+                              crossAxisCount: nonAudioFiles.length < 4 ? 3 : 2,
                               mainAxisSpacing: Dimensions.paddingSizeSmall,
                               crossAxisSpacing: Dimensions.paddingSizeSmall),
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            itemCount: widget.message.conversationFiles!.length < 4 ? widget.message.conversationFiles!.length : 4,
+                            itemCount: nonAudioFiles.length < 4 ? nonAudioFiles.length : 4,
                             itemBuilder: (BuildContext context, index){
-                              return widget.message.conversationFiles![index].fileType == 'png' || widget.message.conversationFiles![index].fileType == 'jpg'?
+                              return nonAudioFiles[index].fileType == 'png' || nonAudioFiles[index].fileType == 'jpg'?
                                Padding( padding: const EdgeInsets.only(right: 5,top: 0,bottom: 5),
                                   child: InkWell(onTap: ()=> PopupBanner(
                                       context: context, images: images,useDots: false,useArrowButton: true,
@@ -113,10 +159,10 @@ class _ConversationBubbleWidgetState extends State<ConversationBubbleWidget> {
                                     child: Stack(children: [
                                           ClipRRect(borderRadius: BorderRadius.circular(5),
                                               child:ImageWidget(height: 100, width: 100, fit: BoxFit.cover,
-                                                  image: '${Get.find<SplashController>().config!.imageBaseUrl!.conversation!}/${widget.message.conversationFiles![index].fileName ?? ''}')),
+                                                  image: '${Get.find<SplashController>().config!.imageBaseUrl!.conversation!}/${nonAudioFiles[index].fileName ?? ''}')),
 
-                                          (widget.message.conversationFiles!.length > 4 && index == 3) ?
-                                          Container(height: 100,width: 100,color: Colors.transparent.withValues(alpha: 0.5,),child: Center(child: Text('+${widget.message.conversationFiles!.length - 4}',style: textRegular.copyWith(color: Theme.of(context).cardColor, fontSize: 16),)),):
+                                          (nonAudioFiles.length > 4 && index == 3) ?
+                                          Container(height: 100,width: 100,color: Colors.transparent.withValues(alpha: 0.5,),child: Center(child: Text('+${nonAudioFiles.length - 4}',style: textRegular.copyWith(color: Theme.of(context).cardColor, fontSize: 16),)),):
                                               const SizedBox()
                                         ]),
                                   )) :
@@ -137,7 +183,7 @@ class _ConversationBubbleWidgetState extends State<ConversationBubbleWidget> {
                                   decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).hoverColor),
                                   child: Stack(children: [
                                       Center(child: SizedBox(width: 50, child: Image.asset(Images.folder))),
-                                      Center(child: Text('${widget.message.conversationFiles![index].fileName}'.substring(widget.message.conversationFiles![index].fileName!.length-7),
+                                      Center(child: Text('${nonAudioFiles[index].fileName}'.substring(nonAudioFiles[index].fileName!.length-7),
                                           maxLines: 5, overflow: TextOverflow.clip)),
                                     ])));
 
@@ -168,11 +214,30 @@ class _ConversationBubbleWidgetState extends State<ConversationBubbleWidget> {
       ),
 
       Padding(padding: (widget.message.user!.id! == Get.find<ProfileController>().driverId) ?
-      const EdgeInsets.fromLTRB(5, 0, 50, 15) : const EdgeInsets.fromLTRB(50, 0, 5, 15),
-          child: Text(DateConverter.isoDateTimeStringToDifferentWithCurrentTime(widget.message.createdAt!),
-              textDirection: TextDirection.ltr, style: textRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall,color: Theme.of(context).hintColor))),
+      const EdgeInsets.fromLTRB(5, 0, 12, 12) : const EdgeInsets.fromLTRB(50, 0, 5, 12),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            if (widget.message.isFailed)
+              GestureDetector(
+                onTap: widget.onRetry,
+                child: Text('not_sent_tap_to_retry'.tr,
+                  style: textRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).colorScheme.error)),
+              )
+            else
+              Text(
+                widget.message.isPending ? 'sending'.tr : DateConverter.isoDateTimeStringToDifferentWithCurrentTime(widget.message.createdAt ?? DateTime.now().toString()),
+                textDirection: TextDirection.ltr, style: textRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall,color: Theme.of(context).hintColor)),
+            if (widget.message.user!.id! == Get.find<ProfileController>().driverId) ...[
+              const SizedBox(width: 4),
+              MessageTicks(
+                pending: widget.message.isPending,
+                failed: widget.message.isFailed,
+                read: widget.message.isRead,
+                color: Theme.of(context).hintColor,
+              ),
+            ],
+          ])),
 
-      if((widget.message.tripId != widget.previousMessage?.tripId! && widget.previousMessage != null))
+      if(widget.previousMessage != null && widget.previousMessage?.tripId != null && widget.message.tripId != widget.previousMessage?.tripId)
           Center(child: Text("${DateConverter.stringToLocalDateOnly(widget.previousMessage?.createdAt??DateTime.now().toString())}, ${'trip'.tr}# ${widget.index==0 ? widget.message.tripId : widget.previousMessage?.tripId}",
             style: textRegular.copyWith(color: Theme.of(context).hintColor),)),
     ],
@@ -180,4 +245,5 @@ class _ConversationBubbleWidgetState extends State<ConversationBubbleWidget> {
   }
 }
 
+bool _isAudioFile(String? fileType) => fileType != null && AppConstants.audioFileExtensions.contains(fileType.toLowerCase());
 

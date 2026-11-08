@@ -19,13 +19,16 @@ class ProfileLevelWidgetWidget extends StatelessWidget {
           Dimensions.paddingSizeDefault, Dimensions.paddingSizeDefault,
         ),
         child: Row(children:  [
-          SizedBox(child: ClipRRect(
-            borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-            child: ImageWidget(
-              width: 40,height: 40,
-              image: '${Get.find<SplashController>().config!.imageBaseUrl!.profileImage}/${profileController.profileInfo?.profileImage??""}',
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Theme.of(context).primaryColor, width: 2)),
+            child: ClipOval(
+              child: ImageWidget(
+                width: 52, height: 52,
+                image: '${Get.find<SplashController>().config?.imageBaseUrl?.profileImage}/${profileController.profileInfo?.profileImage??""}',
+              ),
             ),
-          )),
+          ),
           const SizedBox(width: Dimensions.paddingSizeDefault),
 
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,children: [
@@ -36,19 +39,19 @@ class ProfileLevelWidgetWidget extends StatelessWidget {
             ),
             const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
-            if(Get.find<SplashController>().config!.levelStatus!)
+            if(Get.find<SplashController>().config?.levelStatus ?? false)
               Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: Dimensions.paddingSizeExtraSmall),
+                  padding: const EdgeInsets.symmetric(vertical: 3.0, horizontal: 8),
                   child: Text(
                     (profileController.profileInfo != null && profileController.profileInfo!.level != null) ?
                     '${profileController.profileInfo?.level?.name}':
                     '',
-                    style: textRegular.copyWith(color: Theme.of(context).primaryColor),
+                    style: textMedium.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Colors.white),
                   ),
                 ),
               ),

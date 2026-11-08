@@ -78,6 +78,11 @@ class RideRepository implements RideRepositoryInterface{
   }
 
   @override
+  Future<Response> moveNoAgreement(String tripId) async {
+    return await apiClient.putData("${AppConstants.moveNoAgreementUri}$tripId/no-agreement", {});
+  }
+
+  @override
   Future<Response> remainDistance(String id) async {
     return await apiClient.postData(AppConstants.remainDistance,
     {

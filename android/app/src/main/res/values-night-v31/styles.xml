@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Android 12+ replaces windowBackground with the system splash screen API.
+        Without these two attributes the OS falls back to the launcher icon on a
+        default background, which is why the branded launch screen never showed
+        on modern devices.
+
+        The system masks windowSplashScreenAnimatedIcon to a circle, so it gets
+        the square "Z" mark only; splash_icon_dark.png already carries the
+        transparent padding that keeps the mark clear of the mask.
+    -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/splash_ink</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon_dark</item>
+        <item name="android:forceDarkAllowed">false</item>
+    </style>
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/splash_ink</item>
+    </style>
+</resources>

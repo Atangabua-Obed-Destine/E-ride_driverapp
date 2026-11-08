@@ -1,11 +1,19 @@
+import 'dart:ui';
+import 'package:ride_sharing_user_app/helper/deposit_helper.dart';
+import 'package:ride_sharing_user_app/helper/pusher_helper.dart';
+import 'package:ride_sharing_user_app/helper/trip_event_gate.dart';
+import 'package:ride_sharing_user_app/helper/chat_notification_helper.dart';
+import 'package:ride_sharing_user_app/features/chat/controllers/chat_inbox_controller.dart';
+import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:ride_sharing_user_app/helper/ride_request_ringer.dart';
 import 'package:get/get.dart';
+import 'package:ride_sharing_user_app/features/ride/widgets/move_widgets.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:ride_sharing_user_app/features/chat/controllers/chat_controller.dart';
@@ -15,6 +23,7 @@ import 'package:ride_sharing_user_app/features/help_and_support/controllers/help
 import 'package:ride_sharing_user_app/features/home/screens/parcel_list_screen.dart';
 import 'package:ride_sharing_user_app/features/home/screens/ride_list_screen.dart';
 import 'package:ride_sharing_user_app/features/home/widgets/refund_alert_bottomsheet.dart';
+import 'package:ride_sharing_user_app/features/home/widgets/trip_cancel_bottomsheet.dart';
 import 'package:ride_sharing_user_app/features/html/domain/html_enum_types.dart';
 import 'package:ride_sharing_user_app/features/html/screens/policy_viewer_screen.dart';
 import 'package:ride_sharing_user_app/features/notification/widgets/receipt_confirmation_bottomsheet.dart';
@@ -50,7 +59,8 @@ class NotificationHelper {
         if (kDebugMode) {
           print('Notification response ==> ${response.payload.toString()}');
         }
-        // TODO: Route
+        if (_handleRideRequestResponse(response, flutterLocalNotificationsPlugin)) return;
+        if (await _handleChatResponse(response, flutterLocalNotificationsPlugin)) return;
         try {
           if (response.payload != null && response.payload!.isNotEmpty) {
             if (kDebugMode) {
@@ -75,6 +85,8 @@ class NotificationHelper {
       flutterLocalNotificationsPlugin.initialize(
         settings: initializationsSettings,
         onDidReceiveNotificationResponse: (NotificationResponse response) async {
+          if (_handleRideRequestResponse(response, flutterLocalNotificationsPlugin)) return;
+          if (await _handleChatResponse(response, flutterLocalNotificationsPlugin)) return;
           notificationToRoute(message.data);
           return;
         },
@@ -88,15 +100,29 @@ class NotificationHelper {
         print('onMessage: ${message.data}');
       }
 
+      if(RideRequestRinger.goneActions.contains(message.data['action'])){
+        RideRequestRinger.stopInAppRing(rideRequestId: message.data['ride_request_id']);
+        RideRequestRinger.cancel(message.data['ride_request_id'], flutterLocalNotificationsPlugin);
+      }
+
+      // Chat: one delivery path (open chat, or badge + banner); no system
+      // notification while the app is on screen.
+      if (ChatNotificationHelper.isChatPush(message.data)) {
+        Get.find<ChatInboxController>().onForegroundPush(message.data);
+        return;
+      }
+
 
       /// check maintenance mode
-      if(!(Get.find<SplashController>().config!.maintenanceMode != null &&
-          Get.find<SplashController>().config!.maintenanceMode!.maintenanceStatus == 1 &&
-          Get.find<SplashController>().config!.maintenanceMode!.selectedMaintenanceSystem!.driverApp == 1) || Get.find<SplashController>().haveOngoingRides()){
+      if(!Get.find<SplashController>().isUnderMaintenance || Get.find<SplashController>().haveOngoingRides()){
 
-        ///Check webSocket connection
-        if (Get.find<SplashController>().pusherConnectionStatus == null || Get.find<SplashController>().pusherConnectionStatus == 'Disconnected') {
-          if (message.data['action'] == "new_ride_request" || message.data['action'] == "new_parcel_request") {
+        // Trip events also arrive over the websocket: the first of the two acts. (The
+        // status check here always passed: every connection event set "Disconnected".)
+        if (TripEventGate.shouldHandlePush(message.data)) {
+          if (message.data['action'] == 'deposit_paid') {
+            DepositHelper.onDepositPaid(message.data['ride_request_id']);
+
+          } else if (message.data['action'] == "new_ride_request" || message.data['action'] == "new_parcel_request") {
             _whenNewRequestFound(message);
 
           } else if(message.data['action'] == "new_message"){
@@ -183,76 +209,24 @@ class NotificationHelper {
           }else if(message.data['action'] == 'safety_problem_resolved'){
             Get.find<SafetyAlertController>().getSafetyAlertDetails(message.data['ride_request_id']);
 
-          }
+          }else if(message.data['action'] == 'auto_arrival_notification_driver_message'){
+            Get.find<RideController>().toggleShowDriverNearByTooltip(true);
 
-          ///If web socket Not connected
-        } else {
-          if (message.data['action'] == "bid_accepted") {
-            ///Bid Ride Accepted in this case....
-            _whenCustomerBidAccept(message);
-
-          } else if (checkContainsAction(message.data['action'])) {
-            Get.find<ProfileController>().getProfileInfo().then((value) {
-              if (value.statusCode == 200) {
-                Get.find<RiderMapController>().setRideCurrentState(RideState.initial);
-                Get.offAll(() => const DashboardScreen());
-              }
+          }else if(message.data['action'] == 'trip_canceled_for_driver_identity_mismatch'){
+            Future.delayed(Duration(seconds: 1)).then((_){
+              Get.bottomSheet(TripCancelBottomSheet(
+                tripId: message.data['trip_readable_id'],
+                cancelledAt: message.data['trip_cancellation_time'],
+                reason: message.data['body'],
+              ));
             });
-
-          }else if(message.data['action'] == "customer_rejected_bid"){
-            if((Get.find<RideController>().ongoingTrip ?? []).isEmpty){
-              Get.offAll(() => const DashboardScreen());
-            }else{
-              if(Get.currentRoute == '/RideRequestScreen'){
-                Get.back();
-              }
-            }
-
-          }else if(message.data['action'] == 'identity_image_approved' || message.data['action'] == 'identity_image_rejected'){
-            Get.find<ProfileController>().getProfileInfo();
-
-          }else if(message.data['action'] == 'level_up'){
-            _whenDriverLevelUp(message);
-
-          }else if(message.data['action'] == "withdraw_request_rejected" || message.data['action'] == "withdraw_request_approved"){
-            Get.find<ProfileController>().getProfileInfo();
-            Get.find<WalletController>().getWithdrawPendingList(1);
-
-          }else if(message.data['action'] == "withdraw_request_settled"){
-            Get.find<ProfileController>().getProfileInfo();
-            Get.find<WalletController>().getWithdrawSettledList(1);
-
-          }else if(message.data['action'] == "admin_collected_cash"){
-            Get.find<ProfileController>().getProfileInfo();
-            Get.find<WalletController>().getPayableHistoryList(1);
-
-          }else if(message.data['action'] == 'parcel_returned'){
-            if(Get.isDialogOpen ?? false){
-              Get.back();
-            }
-            Get.find<RideController>().getOngoingParcelList();
-            Get.find<RideController>().getRideDetails(message.data['ride_request_id']);
-            Get.bottomSheet(ReceiptConfirmationBottomsheet());
-
-          }else if(message.data['action'] == 'parcel_canceled' || message.data['action'] == 'trip_canceled'){
-            Get.offAll(const DashboardScreen());
-
-          }else if(message.data['action'] == 'referral_reward_received'){
-            Get.find<ReferAndEarnController>().getEarningHistoryList(1);
-            Get.find<ProfileController>().getProfileInfo();
-
-          }else if(message.data['action'] == 'admin_message'){
-            Get.find<HelpAndSupportController>().getConversation(message.data['type'], 1);
-
-          }else if(message.data['action'] == 'safety_problem_resolved'){
-            Get.find<SafetyAlertController>().getSafetyAlertDetails(message.data['ride_request_id']);
 
           }
 
         }
 
         ///checking which notification are not shown.
-        if(!(message.data['action'] == "customer_canceled_trip" || message.data['action'] == "another_driver_assigned" || message.data['type'] == 'maintenance_mode_on' || message.data['type'] == 'maintenance_mode_off')){
+        if(!(message.data['action'] == "customer_canceled_trip" || message.data['action'] == "another_driver_assigned" || message.data['type'] == 'maintenance_mode_on' || message.data['type'] == 'maintenance_mode_off' || RideRequestRinger.requestActions.contains(message.data['action']) || RideRequestRinger.depositActions.contains(message.data['action']))){
           if(message.data['status'] == '1'){
             NotificationHelper.showNotification(message, flutterLocalNotificationsPlugin, true);
           }
@@ -299,7 +273,7 @@ class NotificationHelper {
   static Future<void> showTextNotification(String title, String body, String orderID, String action, FlutterLocalNotificationsPlugin fln) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'hexaride',
-      'hexaride',
+      'E-Ride Driver',
       playSound: true,
       importance: Importance.max,
       priority: Priority.max,
@@ -318,7 +292,7 @@ class NotificationHelper {
     );
     AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'hexaride',
-      'hexaride',
+      'E-Ride Driver',
       importance: Importance.max,
       styleInformation: bigTextStyleInformation,
       priority: Priority.max,
@@ -358,7 +332,7 @@ class NotificationHelper {
     }
     final AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'hexaride',
-      'hexaride',
+      'E-Ride Driver',
       priority: Priority.max,
       importance: Importance.max,
       playSound: true,
@@ -469,6 +443,9 @@ class NotificationHelper {
       Get.find<BottomMenuController>().setTabIndex(3);
       Get.find<WalletController>().setSelectedHistoryIndex(1, true);
 
+    }
+    else if(data['action'] == 'deposit_paid'){
+      DepositHelper.openTrip(data['ride_request_id']);
     }
     else if(data['action'] == "customer_rejected_bid"){
       Get.offAll(() => const DashboardScreen());
@@ -590,8 +567,52 @@ class NotificationHelper {
 
 }
 
+@pragma('vm:entry-point')
 Future<dynamic> myBackgroundMessageHandler(RemoteMessage remoteMessage) async {
   customPrint('onBackground: ${remoteMessage.data}');
+  final String? action = remoteMessage.data['action'];
+  // Only data-only chat pushes are ours to show; one that carries its own
+  // notification block (older backend) is already shown by Android.
+  if (ChatNotificationHelper.isChatPush(remoteMessage.data) && remoteMessage.notification == null) {
+    final FlutterLocalNotificationsPlugin fln = FlutterLocalNotificationsPlugin();
+    await fln.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('notification_icon'),
+        iOS: DarwinInitializationSettings(),
+      ),
+      onDidReceiveBackgroundNotificationResponse: myBackgroundMessageReceiver,
+    );
+    await ChatNotificationHelper.show(Map<String, dynamic>.from(remoteMessage.data), fln);
+    return;
+  }
+  if (RideRequestRinger.depositActions.contains(action)) {
+    final FlutterLocalNotificationsPlugin fln = FlutterLocalNotificationsPlugin();
+    await fln.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('notification_icon'),
+        iOS: DarwinInitializationSettings(),
+      ),
+      onDidReceiveBackgroundNotificationResponse: myBackgroundMessageReceiver,
+    );
+    await RideRequestRinger.showDepositPaid(Map<String, dynamic>.from(remoteMessage.data), fln);
+    return;
+  }
+  final bool isRequest = RideRequestRinger.requestActions.contains(action);
+  if (isRequest || RideRequestRinger.goneActions.contains(action)) {
+    final FlutterLocalNotificationsPlugin fln = FlutterLocalNotificationsPlugin();
+    await fln.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('notification_icon'),
+        iOS: DarwinInitializationSettings(),
+      ),
+      onDidReceiveBackgroundNotificationResponse: myBackgroundMessageReceiver,
+    );
+    if (isRequest) {
+      await RideRequestRinger.show(Map<String, dynamic>.from(remoteMessage.data), fln);
+    } else {
+      await RideRequestRinger.cancel(remoteMessage.data['ride_request_id'], fln);
+    }
+  }
   // var androidInitialize = new AndroidInitializationSettings('notification_icon');
   // var iOSInitialize = new IOSInitializationSettings();
   // var initializationsSettings = new InitializationSettings(android: androidInitialize, iOS: iOSInitialize);
@@ -600,8 +621,20 @@ Future<dynamic> myBackgroundMessageHandler(RemoteMessage remoteMessage) async {
   // NotificationHelper.showNotification(message, flutterLocalNotificationsPlugin, true);
 }
 
+@pragma('vm:entry-point')
 Future<dynamic> myBackgroundMessageReceiver(NotificationResponse response) async {
   customPrint('onBackgroundClicked: ${response.payload}');
+  // "Reply" / "Mark as read" on a chat notification, handled without
+  // opening the app.
+  DartPluginRegistrant.ensureInitialized();
+  final FlutterLocalNotificationsPlugin fln = FlutterLocalNotificationsPlugin();
+  await fln.initialize(
+    settings: const InitializationSettings(
+      android: AndroidInitializationSettings('notification_icon'),
+      iOS: DarwinInitializationSettings(),
+    ),
+  );
+  await ChatNotificationHelper.handleAction(response, fln);
 }
 
 
@@ -618,8 +651,7 @@ Future<dynamic> myBackgroundMessageReceiver(NotificationResponse response) async
    Get.find<RideController>().ongoingTripList().then((value){
      if((Get.find<RideController>().ongoingTrip ?? []).isEmpty){
        Get.find<RideController>().getPendingRideRequestList(1);
-       AudioPlayer audio = AudioPlayer();
-       audio.play(AssetSource('notification.wav'));
+       RideRequestRinger.startInAppRing(rideRequestId: message.data['ride_request_id']);
        Get.find<RideController>().setRideId(message.data['ride_request_id']);
        Get.find<RideController>().getRideDetailBeforeAccept(message.data['ride_request_id']).then((value) {
          if (value.statusCode == 200) {
@@ -644,7 +676,10 @@ Future<dynamic> myBackgroundMessageReceiver(NotificationResponse response) async
  void _whenRideComplete(RemoteMessage message){
    Get.find<SafetyAlertController>().cancelDriverNeedSafetyStream();
    Get.find<RideController>().getRideDetails(message.data['ride_request_id']).then((value) {
-     if (value.statusCode == 200) {
+     if (value.statusCode == 200 && (Get.find<RideController>().tripDetail?.isMove ?? false)) {
+       // A move is paid in person: no payment screen.
+       finishCompletedMove(message.data['ride_request_id'], reviewed: Get.find<RideController>().tripDetail?.isReviewed ?? false);
+     } else if (value.statusCode == 200) {
        Get.find<RideController>().getFinalFare(message.data['ride_request_id']).then((value) {
          if (value.statusCode == 200) {
            Get.find<RiderMapController>().setRideCurrentState(RideState.initial);
@@ -658,6 +693,8 @@ Future<dynamic> myBackgroundMessageReceiver(NotificationResponse response) async
  void _whenCustomerBidAccept(RemoteMessage message){
    Get.find<RideController>().ongoingTripList().then((value){
      if((Get.find<RideController>().ongoingTrip ?? []).length <= 1){
+       // The customer accepted the bid; a booking deposit may be due first.
+       PusherHelper().customerDepositPaid(message.data['ride_request_id']);
        Get.find<RideController>().getRideDetails(message.data['ride_request_id']).then((value) {
          if (value.statusCode == 200) {
            Get.find<RiderMapController>().setRideCurrentState(RideState.outForPickup);
@@ -737,4 +774,42 @@ void _whenParcelAmountDeducted(RemoteMessage message){
     /// Add the refund data to show dialog after complete ongoing ride
     Get.find<SplashController>().addLastReFoundData(message.data);
   }
+}
+
+/// Handles a tap on the ringing ride-request notification (or its buttons).
+/// Returns false for any other notification so the caller's own handling runs.
+bool _handleRideRequestResponse(NotificationResponse response, FlutterLocalNotificationsPlugin fln) {
+  final String? payload = response.payload;
+  if (payload == null || !payload.startsWith('{')) return false;
+  Map<String, dynamic> data;
+  try {
+    data = Map<String, dynamic>.from(jsonDecode(payload) as Map);
+  } catch (_) {
+    return false;
+  }
+  if (RideRequestRinger.depositActions.contains(data['action'])) {
+    RideRequestRinger.cancelDepositPaid(data['ride_request_id'], fln);
+    DepositHelper.openTrip(data['ride_request_id']);
+    return true;
+  }
+  if (!RideRequestRinger.requestActions.contains(data['action'])) return false;
+
+  RideRequestRinger.cancel(data['ride_request_id'], fln);
+  if (response.actionId == RideRequestRinger.actionDismiss) return true;
+  NotificationHelper.notificationToRoute(data);
+  return true;
+}
+
+/// A tap on a chat notification (or one of its buttons) while the app runs.
+/// Returns false for any other notification.
+Future<bool> _handleChatResponse(NotificationResponse response, FlutterLocalNotificationsPlugin fln) async {
+  if (await ChatNotificationHelper.handleAction(response, fln)) return true;
+  final Map<String, dynamic>? data = ChatNotificationHelper.decode(response.payload);
+  if (data == null || !ChatNotificationHelper.isChatPush(data)) return false;
+  Get.find<ChatInboxController>().openChat(
+    channelId: ChatNotificationHelper.conversationOf(data),
+    tripId: (data['ride_request_id'] as String?) ?? '',
+    peerName: ((data['sender_name'] ?? data['user_name']) as String?) ?? '',
+  );
+  return true;
 }

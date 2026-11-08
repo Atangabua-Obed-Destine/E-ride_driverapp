@@ -1,3 +1,8 @@
+import 'package:flutter/services.dart';
+import 'package:ride_sharing_user_app/util/app_constants.dart';
+import 'package:ride_sharing_user_app/common_widgets/trip_arrival_card.dart';
+import 'package:ride_sharing_user_app/features/chat/controllers/chat_inbox_controller.dart';
+import 'package:ride_sharing_user_app/helper/ride_request_ringer.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
@@ -26,6 +31,7 @@ import 'package:ride_sharing_user_app/features/ride/domain/models/pending_ride_r
 import 'package:ride_sharing_user_app/features/ride/domain/models/remaining_distance_model.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/models/trip_details_model.dart';
 import 'package:ride_sharing_user_app/features/trip/screens/payment_received_screen.dart';
+import 'package:ride_sharing_user_app/features/dashboard/screens/dashboard_screen.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
 
@@ -46,6 +52,7 @@ class RideController extends GetxController implements GetxService{
   TripDetail? tripDetail;
   JustTheController justTheController = JustTheController();
 
+  bool isShowDriverArrivalTooltip = false;
 
   void setRideId(String id){
     _rideId = id;
@@ -95,8 +102,12 @@ class RideController extends GetxController implements GetxService{
     Response response = await rideServiceInterface.getRideDetails(tripId);
     if (response.statusCode == 200) {
       tripDetail = TripDetailsModel.fromJson(response.body).data!;
-      polyline = tripDetail!.encodedPolyline!;
+      // A trip can come back without a route line; the map skips an empty one.
+      polyline = tripDetail!.encodedPolyline ?? '';
       isLoading = false;
+      // Keep the trip chat live (and its unread badge) while the trip runs.
+      Get.find<ChatInboxController>().syncTrip(tripDetail!.id, tripDetail!.currentStatus);
+      _syncTripProgressTimer();
 
       List<Attachments> attachments = tripDetail?.parcelRefund?.attachments ?? [];
       _thumbnailPaths = List.filled(attachments.length, '');
@@ -120,6 +131,27 @@ class RideController extends GetxController implements GetxService{
     return response;
   }
 
+  /// Reads the trip on screen again. A trip that is cancelled, or no longer this
+  /// driver's (the deposit was not paid, it was reassigned: the server then answers
+  /// 403), sends the driver back to the dashboard. Without this the app stayed on
+  /// "Waiting for the deposit" at 0:00 when the cancel arrived while it was hidden.
+  Future<bool> checkTripStillMine(String tripId) async {
+    final Response response = await getRideDetails(tripId, fromHomeScreen: true);
+    final bool lost = response.statusCode == 403 ||
+        (response.statusCode == 200 && tripDetail?.id == tripId && tripDetail?.currentStatus == AppConstants.cancelled);
+    if (lost && (tripDetail == null || tripDetail?.id == tripId)) {
+      leaveLostTrip();
+    }
+    return !lost;
+  }
+
+  void leaveLostTrip() {
+    tripDetail = null;
+    Get.find<RiderMapController>().setRideCurrentState(RideState.initial);
+    update();
+    Get.offAll(() => const DashboardScreen());
+  }
+
   Future<Response> uploadScreenShots(String tripId, XFile file) async {
     Response response = await rideServiceInterface.uploadScreenShots(tripId, file);
     if (response.statusCode == 200) {
@@ -138,7 +170,8 @@ class RideController extends GetxController implements GetxService{
     if (response.statusCode == 200) {
       tripDetail = TripDetailsModel.fromJson(response.body).data!;
       isLoading = false;
-      polyline = tripDetail!.encodedPolyline!;
+      // A trip can come back without a route line; the map skips an empty one.
+      polyline = tripDetail!.encodedPolyline ?? '';
       Get.find<RideController>().remainingDistance(tripId,mapBound: true);
       Get.find<RiderMapController>().getPickupToDestinationPolyline();
       if (kDebugMode) {
@@ -157,6 +190,14 @@ class RideController extends GetxController implements GetxService{
   List<TripDetail>? ongoingTrip, lastRideDetails;
   List<TripDetail>? get ongoingRideList => ongoingTrip;
 
+  /// The home screen knows the running trip from these lists without loading
+  /// its details, so the trip chat (and its unread badge) starts from here too.
+  void _watchChatOf(List<TripDetail>? trips) {
+    for (final TripDetail trip in trips ?? const <TripDetail>[]) {
+      Get.find<ChatInboxController>().syncTrip(trip.id, trip.currentStatus);
+    }
+  }
+
   Future<Response> ongoingTripList() async {
     Response response = await rideServiceInterface.ongoingTripList();
     if (response.statusCode == 200) {
@@ -164,6 +205,7 @@ class RideController extends GetxController implements GetxService{
       if(response.body['data'] != null){
         ongoingTrip!.addAll(OngoingTripModel.fromJson(response.body).data!);
       }
+      _watchChatOf(ongoingTrip);
 
     }else{
       ApiChecker.checkApi(response);
@@ -179,6 +221,7 @@ class RideController extends GetxController implements GetxService{
       if(response.body['data'] != null){
         lastRideDetails!.addAll(OngoingTripModel.fromJson(response.body).data!);
       }
+      _watchChatOf(lastRideDetails);
 
     }else{
       ApiChecker.checkApi(response);
@@ -189,6 +232,8 @@ class RideController extends GetxController implements GetxService{
   bool accepting = false;
   String? onPressedTripId ;
   Future<Response> tripAcceptOrRejected(String tripId, String action, String type, String parcelWeight, {bool showSuccess = true}) async {
+    // The driver answered, so the request stops ringing.
+    RideRequestRinger.stopInAppRing();
     onPressedTripId = tripId;
 
       accepting = true;
@@ -240,6 +285,11 @@ class RideController extends GetxController implements GetxService{
 
         Get.find<OtpTimeCountController>().initialCounter();
 
+        // The customer may owe a booking deposit before the driver sets off:
+        // read it, and hear the moment it is paid.
+        PusherHelper().customerDepositPaid(tripId);
+        getRideDetails(tripId);
+
       }
 
     }else{
@@ -288,7 +338,9 @@ class RideController extends GetxController implements GetxService{
       }
 
       clearVerificationCode();
-      if(tripDetail!.type! == 'parcel' &&  tripDetail?.parcelInformation?.payer == 'sender'){
+      // Sender pays at pickup, unless it was already paid in the app (food &
+      // shop orders, digitally paid parcels): then just start delivering.
+      if(tripDetail!.type! == 'parcel' &&  tripDetail?.parcelInformation?.payer == 'sender' && tripDetail?.paymentStatus != AppConstants.paid){
         Get.find<RiderMapController>().setRideCurrentState(RideState.ongoing);
         getFinalFare(tripId).then((value) {
           if(value.statusCode == 200){
@@ -319,8 +371,15 @@ class RideController extends GetxController implements GetxService{
       PusherHelper().tripPaymentSuccessful(tripDetail!.id!);
 
     }else{
-      showCustomSnackBar('${response.body['errors'][0]['error_code']}',subMessage: '${response.body['errors'][0]['message']}');
+      // Reset first: a refusal without an errors entry ("wait for the deposit",
+      // "go to the pickup") threw here and left the Start button on a spinner.
       isPinVerificationLoading = false;
+      final dynamic errors = response.body is Map ? response.body['errors'] : null;
+      if (errors is List && errors.isNotEmpty && errors[0] is Map) {
+        showCustomSnackBar('${errors[0]['error_code']}', subMessage: '${errors[0]['message']}');
+      } else {
+        ApiChecker.checkApi(response);
+      }
     }
     update();
     return response;
@@ -330,7 +389,38 @@ class RideController extends GetxController implements GetxService{
 
   String myDriveMode = '';
   RemainingDistanceModel? matchedMode;
-  List<RemainingDistanceModel>? remainingDistanceItem = [];
+  List<RemainingDistanceModel> remainingDistanceItem = [];
+
+
+  String? _arrivedMarkedFor;
+  Timer? _tripProgressTimer;
+  String? _tripProgressFor;
+
+  /// While a trip is ongoing, refresh the distance to the drop-off every
+  /// 20 s so the arrival card stays live (it used to update only on taps).
+  void _syncTripProgressTimer() {
+    final bool live = tripDetail?.currentStatus == 'ongoing' && tripDetail?.id != null;
+    if (!live) {
+      _tripProgressTimer?.cancel();
+      _tripProgressTimer = null;
+      _tripProgressFor = null;
+      return;
+    }
+    if (_tripProgressTimer != null && _tripProgressFor == tripDetail!.id) return;
+    _tripProgressTimer?.cancel();
+    final String id = tripDetail!.id!;
+    _tripProgressFor = id;
+    _tripProgressTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (tripDetail?.id == id && tripDetail?.currentStatus == 'ongoing') {
+        remainingDistance(id);
+      } else {
+        _tripProgressTimer?.cancel();
+        _tripProgressTimer = null;
+        _tripProgressFor = null;
+      }
+    });
+  }
+
   Future<Response> remainingDistance(String tripId,{bool mapBound = false}) async {
     myDriveMode = Get.find<ProfileController>().profileInfo!.vehicle!.category!.type!;
     isLoading = true;
@@ -344,23 +434,28 @@ class RideController extends GetxController implements GetxService{
 
       remainingDistanceItem = [];
       response.body.forEach((distance) {
-        remainingDistanceItem!.add(RemainingDistanceModel.fromJson(distance));
+        remainingDistanceItem.add(RemainingDistanceModel.fromJson(distance));
 
       });
-      if(remainingDistanceItem != null && remainingDistanceItem!.isNotEmpty){
-        matchedMode =  remainingDistanceItem![0];
+      if(remainingDistanceItem.isNotEmpty){
+        matchedMode =  remainingDistanceItem[0];
       }
 
       if(matchedMode != null && (matchedMode!.distance! * 1000) <= 100 && tripDetail != null && tripDetail!.currentStatus == 'pending' ){
         arrivalPickupPoint(tripId);
       }
 
-      if(tripDetail != null && tripDetail!.currentStatus == 'ongoing' && !tripDetail!.isPaused! && matchedMode != null &&  Get.find<RiderMapController>().isInside && matchedMode!.isPicked!){
+      // Arrived at the drop-off: tell the server once per trip, with a buzz
+      // and a sound. (This used to repeat on every refresh while inside the
+      // admin "completion radius", which can be kilometres wide.)
+      if(tripDetail != null && tripDetail!.currentStatus == 'ongoing' && !tripDetail!.isPaused! && matchedMode != null && matchedMode!.isPicked! &&
+          TripArrivalCard.stageFor(matchedMode!.distance) == TripArrivalStage.arrived && _arrivedMarkedFor != tripId){
+        _arrivedMarkedFor = tripId;
         arrivalDestination(tripId, "destination");
         getRideDetails(tripId);
+        HapticFeedback.heavyImpact();
         AudioPlayer audio = AudioPlayer();
         audio.play(AssetSource('notification.wav'));
-
       }
 
     }else{
@@ -610,11 +705,11 @@ class RideController extends GetxController implements GetxService{
 
       remainingDistanceItem = [];
       response.body.forEach((distance) {
-        remainingDistanceItem!.add(RemainingDistanceModel.fromJson(distance));
+        remainingDistanceItem.add(RemainingDistanceModel.fromJson(distance));
       });
 
-      if(remainingDistanceItem != null && remainingDistanceItem!.isNotEmpty){
-        matchedMode =  remainingDistanceItem![0];
+      if(remainingDistanceItem.isNotEmpty){
+        matchedMode =  remainingDistanceItem[0];
       }
 
     }else{
@@ -626,6 +721,22 @@ class RideController extends GetxController implements GetxService{
 
   void showSafetyAlertTooltip(){
     justTheController.showTooltip();
+  }
+
+  /// E-Ride Move: "We couldn't agree" on the price at the pickup.
+  bool movingNoAgreement = false;
+  Future<bool> noAgreement(String tripId) async {
+    if (movingNoAgreement) return false;
+    movingNoAgreement = true;
+    update();
+    final Response response = await rideServiceInterface.moveNoAgreement(tripId);
+    movingNoAgreement = false;
+    update();
+    if (response.statusCode == 200) return true;
+    final body = response.body;
+    final errors = body is Map ? body['errors'] : null;
+    showCustomSnackBar(errors is List && errors.isNotEmpty && errors.first is Map ? '${errors.first['message']}' : 'something_went_wrong'.tr);
+    return false;
   }
 
   Future<Response> startForPickup(String tripId) async {
@@ -650,6 +761,11 @@ class RideController extends GetxController implements GetxService{
     }
     update();
     return response;
+  }
+
+  void toggleShowDriverNearByTooltip(bool action){
+    isShowDriverArrivalTooltip = action;
+    update();
   }
 
 }

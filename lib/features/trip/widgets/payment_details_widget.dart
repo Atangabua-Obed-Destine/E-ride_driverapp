@@ -13,6 +13,7 @@ class PaymentDetailsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (tripDetail?.isMove ?? false) return _move(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(
         Dimensions.paddingSizeDefault, Dimensions.paddingSizeDefault,
@@ -132,6 +133,32 @@ class PaymentDetailsWidget extends StatelessWidget {
 
           ]),
         ),
+      ]),
+    );
+  }
+
+  /// E-Ride Move: the customer paid the price in person; only the deposit went through E-Ride.
+  Widget _move(BuildContext context) {
+    final deposit = tripDetail?.deposit;
+    return Container(
+      padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).textTheme.bodyMedium!.color!.withValues(alpha: 0.2), width: .5),
+        borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('payment_details'.tr, style: textSemiBold.copyWith(color: Theme.of(context).textTheme.bodyMedium!.color)),
+        const SizedBox(height: Dimensions.paddingSizeSmall),
+        Row(children: [
+          Icon(Icons.handshake_outlined, size: 18, color: Theme.of(context).primaryColor),
+          const SizedBox(width: Dimensions.paddingSizeSmall),
+          Expanded(child: Text('move_price_paid_in_person'.tr, style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall))),
+        ]),
+        if (deposit != null) ...[
+          const SizedBox(height: Dimensions.paddingSizeSmall),
+          Text('move_customer_deposit_note'.trParams({'amount': PriceConverter.convertPrice(context, deposit.amount)}),
+              style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor)),
+        ],
       ]),
     );
   }

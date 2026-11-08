@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:ride_sharing_user_app/common_widgets/expandable_bottom_sheet.dart';
+import 'package:ride_sharing_user_app/features/map/widgets/verify_and_driver_near_by_toster_widget.dart';
 import 'package:ride_sharing_user_app/features/profile/screens/profile_screen.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/models/trip_details_model.dart';
 import 'package:ride_sharing_user_app/features/safety_setup/controllers/safety_alert_controller.dart';
@@ -191,6 +192,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver{
                       ),
                     ),
 
+                    VerifyAndDriverNearByToasterWidget(),
+
                     InkWell(
                       onTap: () => Get.to(const ProfileScreen()),
                       child: const DriverHeaderInfoWidget(),
@@ -250,7 +253,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver{
                     )),
 
                     if(_isLocationShareEnable())
-                    Positioned(bottom: Get.height * 0.46, right:0,
+                    Positioned(bottom: Get.height * 0.476, right:0,
                       child: Align(
                           alignment: Alignment.bottomRight,
                           child: CustomIconCardWidget(
@@ -270,7 +273,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver{
 
                     if(_isSafetyFeatureActive())
                       Positioned(
-                        bottom: _isLocationShareEnable() ? Get.height * 0.52 : Get.height * 0.46, right:0,
+                        bottom: _isLocationShareEnable() ? Get.height * 0.54 : Get.height * 0.46, right:0,
                         child: Align(
                           alignment: Alignment.bottomRight,
                           child: JustTheTooltip(
@@ -317,6 +320,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver{
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Center(child: GetBuilder<RideController>(builder: (rideController) {
+                    // Nothing waiting: no "0 More request" pill.
+                    if ((rideController.pendingRideRequestModel?.totalSize ?? 0) == 0) return const SizedBox.shrink();
                     return InkWell(onTap: () => Get.to(()=> const RideRequestScreen()),
                       child: Container(
                         decoration: BoxDecoration(color: Theme.of(context).primaryColor,
@@ -370,7 +375,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver{
   }
 
   void _setMapCurrentRoutes() async{
-    await  Get.find<RideController>().getRideDetails(Get.find<RideController>().tripDetail?.id ?? '');
+    final String? tripId = Get.find<RideController>().tripDetail?.id;
+    if (tripId == null) return;
+    final RideState state = Get.find<RiderMapController>().currentRideState;
+    if ([RideState.accepted, RideState.outForPickup, RideState.ongoing].contains(state)) {
+      // An accepted trip cancelled or taken from this driver while the app was
+      // hidden: dashboard. (A request not accepted yet also answers 403: skipped.)
+      if (!await Get.find<RideController>().checkTripStillMine(tripId)) return;
+    } else {
+      await Get.find<RideController>().getRideDetails(tripId);
+    }
     TripDetail? tripDetail = Get.find<RideController>().tripDetail;
     if (tripDetail?.currentStatus == AppConstants.accepted || tripDetail?.currentStatus == AppConstants.outForPickup) {
       if(tripDetail?.currentStatus == AppConstants.outForPickup){

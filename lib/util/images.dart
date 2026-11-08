@@ -1,10 +1,17 @@
 class Images {
   static const String logo = 'assets/image/logo.png';
   static const String splashLogo = 'assets/image/splash_logo.png';
+  /// Dark-background variants. The shipped logo.png mixes near-black and white
+  /// artwork, so it is only ever fully legible on a mid-tone; these map the
+  /// greyscale parts to white and keep the brand red, for the splash and the
+  /// native launch screens.
+  static const String logoOnDark = 'assets/image/logo_on_dark.png';
+  static const String brandMarkOnDark = 'assets/image/brand_mark_on_dark.png';
   static const String signUpScreenLogo = 'assets/image/sign_up_logo.png';
   static const String forgotPasswordLogo = 'assets/image/forgot_password.png';
   static const String saudi = 'assets/image/saudi.png';
   static const String unitedKingdom = 'assets/image/united_kingdom.png';
+  static const String france = 'assets/image/france.png';
   static const String placeholder = 'assets/image/placeholder.jpg';
   static const String personPlaceholder = 'assets/image/person_placeholder.png';
   static const String lock = 'assets/image/lock.png';
@@ -95,6 +102,7 @@ class Images {
   static const String folder = 'assets/image/folder.png';
   static const String info = 'assets/image/info.png';
   static const String carIconTop = 'assets/image/car_icon_top.png';
+  static const String truckTop = 'assets/image/truck_top.png';
   static const String initTrip = 'assets/image/init_trip.png';
   static const String pendingWithdrawn = 'assets/image/pending_withdrawn.png';
   static const String totalEarning = 'assets/image/total_earning.png';
@@ -224,6 +232,7 @@ class Images {
   static const String warning = 'assets/image/warning.png';
   static const String biometricIcon = 'assets/image/biometric_icon.png';
   static const String biometricPassword = 'assets/image/biometric_password.png';
+  static const String availabilityIcon = 'assets/image/availability_icon.png';
 
   //svg
   static const String splashBgOne = 'assets/svg/splash_bg_one.svg';
@@ -242,7 +251,6 @@ class Images {
   static const String moneyActive = 'assets/svg/money_active.svg';
   static const String moneyOutline = 'assets/svg/money_outline.svg';
   static const String deleteIcon = 'assets/svg/delete_icon.svg';
-  static const String logoWithNameSvg = 'assets/svg/logo_with_name.svg';
   static const String signUpScreenLogoSvg = 'assets/svg/sign_up_screen_logo.svg';
   static const String referAndEarnGraphics = 'assets/svg/refer_and_earn_graphics.svg';
   static const String otpLoginGraphics = 'assets/svg/otp_login_graphics.svg';

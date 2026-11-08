@@ -15,7 +15,12 @@ class CustomerInfoWidget extends StatelessWidget {
   final bool fromTripDetails;
   final String? fare;
   final String? customerRating;
-  const CustomerInfoWidget({super.key,  this.fromTripDetails = false, required this.customer, this.fare, this.customerRating});
+  /// A parcel's sender when it is not the customer, e.g. the restaurant of a
+  /// food order: where the driver collects it.
+  final String? pickupFrom;
+  /// E-Ride Move: no fare, the price is agreed with the customer.
+  final bool move;
+  const CustomerInfoWidget({super.key,  this.fromTripDetails = false, required this.customer, this.fare, this.customerRating, this.pickupFrom, this.move = false});
 
   @override
   Widget build(BuildContext context) {
@@ -51,11 +56,35 @@ class CustomerInfoWidget extends StatelessWidget {
                 Row(children: [
                   Icon(Icons.star_rate_rounded, color: Theme.of(Get.context!).colorScheme.primaryContainer,size: Dimensions.iconSizeMedium),
 
-                  Text(double.parse(customerRating!).toStringAsFixed(1), style: textRegular),
+                  // A customer nobody has rated yet shows "New", not 0.0.
+                  Text(
+                    (double.tryParse(customerRating!) ?? 0) > 0 ? double.parse(customerRating!).toStringAsFixed(1) : 'new_customer'.tr,
+                    style: textRegular,
+                  ),
                 ]),
+
+              if(pickupFrom != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Row(children: [
+                    Icon(Icons.storefront_rounded, size: 15, color: Theme.of(Get.context!).primaryColor),
+                    const SizedBox(width: 4),
+                    Flexible(child: Text(
+                      '${'pickup_from'.tr} $pickupFrom',
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: textMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(Get.context!).primaryColor),
+                    )),
+                  ]),
+                ),
             ])),
 
           fromTripDetails ? const SizedBox() :
+          move ?
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 110),
+            child: Text('move_price_short'.tr, textAlign: TextAlign.end,
+                style: textMedium.copyWith(color: Theme.of(Get.context!).primaryColor, fontSize: Dimensions.fontSizeSmall)),
+          ) :
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text('estimated_fare'.tr, style: textMedium.copyWith(color: Theme.of(Get.context!).primaryColor)),
 

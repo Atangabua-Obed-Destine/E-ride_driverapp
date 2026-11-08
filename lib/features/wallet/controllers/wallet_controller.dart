@@ -92,9 +92,11 @@ class WalletController extends GetxController implements GetxService {
   }
 
 
-  void setMethodInfoTypeIndex(SingleMethodInfo methodInfo) {
+  void setMethodInfoTypeIndex(SingleMethodInfo? methodInfo, {bool isUpdate = true}) {
     selectedMethodInfo = methodInfo;
-    update();
+    if(isUpdate){
+      update();
+    }
   }
 
   bool isLoading = false;

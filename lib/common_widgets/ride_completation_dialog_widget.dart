@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
+import 'package:ride_sharing_user_app/features/ride/widgets/move_widgets.dart';
 import 'package:ride_sharing_user_app/features/dashboard/screens/dashboard_screen.dart';
 import 'package:ride_sharing_user_app/features/map/controllers/map_controller.dart';
 import 'package:ride_sharing_user_app/features/map/controllers/otp_time_count_controller.dart';
@@ -77,7 +78,10 @@ class RideCompletationDialogWidget extends StatelessWidget {
                 onTap: (){
                   if(rideController.tripDetail!.type != "parcel"){
                     rideController.tripStatusUpdate('completed', rideController.tripDetail!.id!, "trip_completed_successfully", '', []).then((value) async {
-                      if(value.statusCode == 200){
+                      if(value.statusCode == 200 && rideController.tripDetail!.isMove){
+                        // A move is paid in person: no payment screen.
+                        finishCompletedMove(rideController.tripDetail!.id!, reviewed: rideController.tripDetail!.isReviewed ?? false);
+                      } else if(value.statusCode == 200){
                         rideController.getRideDetails(rideController.tripDetail!.id!);
                         rideController.getFinalFare(rideController.tripDetail!.id!).then((value){
                           if(value.statusCode == 200){

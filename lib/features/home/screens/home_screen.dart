@@ -1,14 +1,15 @@
+import 'package:ride_sharing_user_app/features/chat/controllers/chat_inbox_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:ride_sharing_user_app/features/face_verification/controllers/face_verification_controller.dart';
 import 'package:ride_sharing_user_app/features/face_verification/widgets/home_face_verification_warning_widget.dart';
+import 'package:ride_sharing_user_app/features/home/widgets/account_paused_warning_widget.dart';
 import 'package:ride_sharing_user_app/features/home/screens/ride_list_screen.dart';
 import 'package:ride_sharing_user_app/features/home/widgets/home_referral_view_widget.dart';
+import 'package:ride_sharing_user_app/features/home/widgets/out_of_zone_widget.dart';
 import 'package:ride_sharing_user_app/features/home/widgets/refund_alert_bottomsheet.dart';
 import 'package:ride_sharing_user_app/features/notification/widgets/notification_shimmer_widget.dart';
-import 'package:ride_sharing_user_app/features/out_of_zone/controllers/out_of_zone_controller.dart';
-import 'package:ride_sharing_user_app/features/out_of_zone/screens/out_of_zone_map_screen.dart';
 import 'package:ride_sharing_user_app/features/profile/controllers/profile_controller.dart';
 import 'package:ride_sharing_user_app/features/profile/screens/profile_screen.dart';
 import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
@@ -25,9 +26,9 @@ import 'package:ride_sharing_user_app/features/home/widgets/profile_info_card_wi
 import 'package:ride_sharing_user_app/features/home/widgets/vehicle_pending_widget.dart';
 import 'package:ride_sharing_user_app/features/profile/screens/profile_menu_screen.dart';
 import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
-import 'package:ride_sharing_user_app/common_widgets/app_bar_widget.dart';
-import 'package:ride_sharing_user_app/common_widgets/sliver_delegate.dart';
+import 'package:ride_sharing_user_app/features/home/widgets/home_header.dart';
 import 'package:ride_sharing_user_app/common_widgets/zoom_drawer_context_widget.dart';
+import 'package:ride_sharing_user_app/features/splash/widgets/splash_backdrop.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
 
 class HomeMenu extends GetView<ProfileController> {
@@ -43,7 +44,7 @@ class HomeMenu extends GetView<ProfileController> {
         borderRadius: 24.0,
         isRtl: !Get.find<LocalizationController>().isLtr,
         angle: -5.0,
-        menuBackgroundColor: Theme.of(context).primaryColor,
+        menuBackgroundColor: kSplashInk,
         slideWidth: MediaQuery.of(context).size.width * 0.85,
         mainScreenScale: .4,
         mainScreenTapClose: true,
@@ -82,6 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
     loadData();
 
     super.initState();
+    // Unread chat badges (menu button, menu, trip card).
+    Get.find<ChatInboxController>().refreshUnread();
   }
 
   @override
@@ -98,10 +101,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final RideController rideController = Get.find<RideController>();
 
     Get.find<ProfileController>().getCategoryList(1);
-    Get.find<ProfileController>().getProfileInfo();
+    // The sheets read the profile: decide once it has loaded. Checked right away, a
+    // profile still loading looked like "no vehicle" and asked to add one.
+    Get.find<ProfileController>().getProfileInfo().then((_) => HomeScreenHelper().checkAndShowBottomSheets());
     Get.find<ProfileController>().getDailyLog();
     rideController.getLastRideDetail();
-    HomeScreenHelper().checkAndShowBottomSheets();
     await loadOngoingList();
 
     Get.find<ProfileController>().getProfileLevelInfo();
@@ -117,6 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if(rideController.getPendingRideRequestModel != null){
       HomeScreenHelper().pendingListPusherImplementation();
     }
+
+    rideController.toggleShowDriverNearByTooltip(false);
 
     HomeScreenHelper().checkMaintanenceMode();
   }
@@ -158,22 +164,19 @@ class _HomeScreenState extends State<HomeScreen> {
             CustomScrollView(
                 controller: _scrollController,
                 slivers: [
-                  SliverPersistentHeader(pinned: true, delegate: SliverDelegate(
-                  height: GetPlatform.isIOS ? 150 : 120,
-                  child: Column(children: [
-                    AppBarWidget(
-                      title: 'dashboard'.tr, showBackButton: false,
-                      onTap: (){
-                        Get.find<ProfileController>().toggleDrawer();
-                      },
-                    ),
-                  ])
-                  )),
+                  // The header is pinned, so it lives in the Stack below rather
+                  // than in the sliver list; this just reserves its height.
+                  SliverToBoxAdapter(child: SizedBox(height: HomeHeader.heightOf(context))),
 
                   SliverToBoxAdapter(child: GetBuilder<ProfileController>(builder: (profileController) {
                     return profileController.profileInfo != null ?
                     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       const SizedBox(height: 60.0),
+
+                      if((profileController.profileInfo?.isPaused ?? false) && profileController.profileInfo?.pausedReason != 'face_verification' && profileController.profileInfo?.pausedReason != 'cash_in_hand_limit')...[
+                        const AccountPausedWarningWidget(),
+                        const SizedBox(height: Dimensions.paddingSizeDefault)
+                      ],
 
                       if(profileController.profileInfo?.vehicle != null &&
                           profileController.profileInfo?.vehicle?.vehicleRequestStatus == 'approved'
@@ -185,35 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       if(profileController.profileInfo?.vehicle == null)
                         const AddYourVehicleWidget(),
 
-                      GetBuilder<OutOfZoneController>(builder: (outOfZoneController){
-                        return outOfZoneController.isDriverOutOfZone ?
-                        InkWell(
-                          onTap: ()=> Get.to(()=> const OutOfZoneMapScreen()),
-                          child: Container(
-                            padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                            margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeDefault),
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                                color: Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: 0.1)
-                            ),
-                            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          Row(children: [
-                            Icon(Icons.warning,size: 24,color: Theme.of(context).colorScheme.error),
-                            const SizedBox(width: Dimensions.paddingSizeDefault),
-
-                            Column(crossAxisAlignment: CrossAxisAlignment.start,children: [
-                              Text('you_are_out_of_zone'.tr,style: textBold.copyWith(fontSize: Dimensions.fontSizeSmall)),
-
-                              Text('to_get_request_must'.tr,style: textRegular.copyWith(fontSize: 10,color: Theme.of(context).primaryColor))
-                            ])
-                          ]),
-
-                          Image.asset(Images.homeOutOfZoneIcon,height: 30,width: 30)
-                        ]),
-                          ),
-                        ) :
-                        const SizedBox();
-                      }),
+                      OutOfZoneWidget(),
 
                       if(profileController.profileInfo?.vehicle != null &&
                           (profileController.profileInfo?.vehicle?.vehicleRequestStatus == 'pending' || profileController.profileInfo?.vehicle?.vehicleRequestStatus == 'denied')
@@ -222,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       if(
                       (!(profileController.profileInfo?.isVerified ?? false) ||
-                          ((profileController.profileInfo?.isSuspended ?? false) && (profileController.profileInfo?.suspendReason == 'face_verification')) ||
+                          ((profileController.profileInfo?.isPaused ?? false) && (profileController.profileInfo?.pausedReason == 'face_verification')) ||
                           (profileController.profileInfo?.needVerification ?? false)) && (Get.find<SplashController>().config?.verifyDriverIdentity ?? false)
                       )
                         Container(
@@ -253,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
 
 
-                      if(Get.find<ProfileController>().profileInfo?.vehicle != null)
+                      if(profileController.profileInfo?.vehicle != null)
                         const MyActivityListViewWidget(),
                       const SizedBox(height: Dimensions.paddingSizeDefault),
 
@@ -267,14 +242,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 ]
             ),
 
+            Positioned(
+              top: 0, left: 0, right: 0,
+              child: HomeHeader(onMenuTap: () => Get.find<ProfileController>().toggleDrawer()),
+            ),
+
             GetBuilder<ProfileController>(builder: (profileController){
               return profileController.isCashInHandHoldAccount ?
               CashInHandWarningWidget() :
-              (profileController.profileInfo?.isSuspended ?? false) ?
+              ((profileController.profileInfo?.isPaused ?? false) && (profileController.profileInfo?.pausedReason == 'face_verification')) ?
               HomeFaceVerificationWarningWidget() : const SizedBox();
             }),
 
-            Positioned(top: GetPlatform.isIOS ? 120 : 90, left: 0, right: 0,
+            Positioned(top: HomeHeader.cardTopOf(context), left: 0, right: 0,
               child: GetBuilder<ProfileController>(builder: (profileController) {
                 return GestureDetector(
                     onTap: (){

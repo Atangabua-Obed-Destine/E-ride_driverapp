@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>whatsapp</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -49,6 +53,8 @@
 	<string>This app need photo gallery access for taking photo for user profile picture.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>This app requires Face ID for secure authentication.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs microphone access to record voice messages in chat.</string>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<string>This app need location permission for tracking driver start to destination trip.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

@@ -35,7 +35,7 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
   void initState() {
     super.initState();
 
-    Get.find<AuthController>().countryDialCode = CountryCode.fromCountryCode(Get.find<SplashController>().config!.countryCode!).dialCode!;
+    Get.find<AuthController>().countryDialCode = Get.find<SplashController>().countryDialCode;
   }
 
   @override
@@ -165,8 +165,7 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
                       ),
                       const SizedBox(height: Dimensions.paddingSizeDefault),
 
-                      (Get.find<SplashController>().config!.selfRegistration != null &&
-                          Get.find<SplashController>().config!.selfRegistration!) ?
+                      Get.find<SplashController>().selfRegistrationEnabled ?
                       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Text(
                           '${'do_not_have_an_account'.tr} ',

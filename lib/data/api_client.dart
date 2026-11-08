@@ -21,6 +21,10 @@ class ApiClient extends GetxService {
   final SharedPreferences sharedPreferences;
   static final String noInternetMessage = 'connection_to_api_server_failed'.tr;
   final int timeoutInSeconds = 30;
+  // One client for the app's lifetime, so requests reuse a kept-alive connection.
+  // The top-level http.get/post opened a new one each time: a fresh TCP and TLS
+  // handshake to the server before every call (about 0.6 s on Cameroon networks).
+  final http.Client _http = http.Client();
 
   late String token;
   late Map<String, String> _mainHeaders;
@@ -52,7 +56,7 @@ class ApiClient extends GetxService {
       if(kDebugMode) {
         log('====> API Call: $uri\nHeader: $_mainHeaders');
       }
-      http.Response response = await http.get(
+      http.Response response = await _http.get(
         Uri.parse(appBaseUrl+uri),
         headers: headers ?? _mainHeaders,
       ).timeout(Duration(seconds: timeoutInSeconds));
@@ -68,7 +72,7 @@ class ApiClient extends GetxService {
         log('====> API Call: $uri\nHeader: $_mainHeaders');
         log('====> API Body: $body');
       }
-      http.Response response = await http.post(
+      http.Response response = await _http.post(
         Uri.parse(appBaseUrl+uri),
         body: jsonEncode(body),
         headers: headers ?? _mainHeaders,
@@ -132,7 +136,7 @@ class ApiClient extends GetxService {
 
 
       request.fields.addAll(body);
-      http.Response response = await http.Response.fromStream(await request.send());
+      http.Response response = await http.Response.fromStream(await _http.send(request));
       return handleResponse(response, uri);
     } catch (e) {
       return Response(statusCode: 1, statusText: noInternetMessage);
@@ -150,7 +154,10 @@ class ApiClient extends GetxService {
     request.headers.addAll(headers ?? _mainHeaders);
 
     if(otherFile != null) {
-      request.files.add(http.MultipartFile('files[${multipartBody!.length}]', otherFile.readStream!, otherFile.size, filename: basename(otherFile.name)));
+      String fileExtension = extension(otherFile.name).replaceFirst('.', '').toLowerCase();
+      bool isAudio = AppConstants.audioFileExtensions.contains(fileExtension);
+      request.files.add(http.MultipartFile(isAudio ? 'voice_message' : 'files[${multipartBody!.length}]', otherFile.readStream!, otherFile.size, filename: basename(otherFile.name)));
+
     }
     if(multipartBody!=null){
       for(MultipartBody multipart in multipartBody) {
@@ -161,7 +168,7 @@ class ApiClient extends GetxService {
       }
     }
     request.fields.addAll(body);
-    http.Response response = await http.Response.fromStream(await request.send());
+    http.Response response = await http.Response.fromStream(await _http.send(request));
     return handleResponse(response, uri);
   }
 
@@ -198,7 +205,7 @@ class ApiClient extends GetxService {
     }
 
     request.fields.addAll(body);
-    http.Response response = await http.Response.fromStream(await request.send());
+    http.Response response = await http.Response.fromStream(await _http.send(request));
     return handleResponse(response, uri);
   }
 
@@ -210,7 +217,7 @@ class ApiClient extends GetxService {
         log('====> API Call: $uri\nHeader: $_mainHeaders');
         log('====> API Body: $body');
       }
-      http.Response response = await http.put(
+      http.Response response = await _http.put(
         Uri.parse(appBaseUrl+uri),
         body: jsonEncode(body),
         headers: headers ?? _mainHeaders,
@@ -226,7 +233,7 @@ class ApiClient extends GetxService {
       if(kDebugMode) {
         log('====> API Call: $uri\nHeader: $_mainHeaders');
       }
-      http.Response response = await http.delete(
+      http.Response response = await _http.delete(
         Uri.parse(appBaseUrl+uri),
         headers: headers ?? _mainHeaders,
       ).timeout(Duration(seconds: timeoutInSeconds));
@@ -256,6 +263,12 @@ class ApiClient extends GetxService {
       }
     }else if(localResponse.statusCode != 200 && localResponse.body == null) {
       localResponse = Response(statusCode: 0, statusText: noInternetMessage);
+    }
+    if (localResponse.statusCode == 429) {
+      // Rate limited: a plain message instead of the raw "Too Many Requests". In the
+      // body too, because some controllers show body['message'] rather than statusText.
+      final String message = 'too_many_requests_try_again'.tr;
+      localResponse = Response(statusCode: 429, body: {'message': message, 'errors': []}, statusText: message);
     }
     if(kDebugMode) {
       log('====> API Response: [${localResponse.statusCode}] $uri\n${localResponse.body}');

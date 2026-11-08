@@ -10,7 +10,7 @@ import flutter_downloader
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GMSServices.provideAPIKey("AIzaSyBlrnYeiGNzQByKArJo42VJTSbD-NDzCb0")
+    GMSServices.provideAPIKey("AIzaSyCYuvunvdHlIVWuExTDkvKyEcsZWYPA25w")
     if #available(iOS 10.0, *) {
         UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
     }

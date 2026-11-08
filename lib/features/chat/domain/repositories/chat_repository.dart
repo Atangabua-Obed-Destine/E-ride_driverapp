@@ -78,5 +78,18 @@ class ChatRepository implements ChatRepositoryInterface{
     throw UnimplementedError();
   }
 
+  @override
+  Future<Response> markChatRead(String channelId) async {
+    return await apiClient.postData(AppConstants.chatMarkRead, {'channel_id': channelId, '_method': 'put'});
+  }
 
+  @override
+  Future<Response> sendTyping(String channelId, {bool typing = true}) async {
+    return await apiClient.postData(AppConstants.chatTyping, {'channel_id': channelId, 'typing': typing ? 1 : 0, '_method': 'put'});
+  }
+
+  @override
+  Future<Response> getUnreadSummary() async {
+    return await apiClient.getData(AppConstants.chatUnreadSummary);
+  }
 }

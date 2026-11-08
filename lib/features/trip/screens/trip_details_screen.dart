@@ -155,6 +155,27 @@ class _TripDetailsState extends State<TripDetails> {
                       ),
                       const SizedBox(height: Dimensions.paddingSizeLarge),
 
+                      if(rideController.tripDetail?.cancellationReason != null)...[
+                        Container(
+                          width: Get.width,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                            color: Theme.of(context).colorScheme.error.withValues(alpha:0.08),
+                          ),
+                          padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
+                          margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text('${'cancelled_by'.tr} ${rideController.tripDetail?.cancelledBy}', style: textSemiBold),
+                            const SizedBox(height: Dimensions.paddingSizeSmall),
+                            RichText(text: TextSpan(text: 'cancellation_reason'.tr, style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).colorScheme.error), children: [
+                              TextSpan(text: ' : ', style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).colorScheme.error)),
+                              TextSpan(text: rideController.tripDetail?.cancellationReason ?? '', style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyMedium?.color))
+                            ]))
+                          ]),
+                        ),
+                        const SizedBox(height: Dimensions.paddingSizeLarge),
+                      ],
+
                       CustomerDetailsWidget(
                         rideController: rideController,
                         showReviewButton: true,

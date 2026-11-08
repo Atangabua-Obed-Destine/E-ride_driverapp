@@ -30,10 +30,7 @@ class HomeScreenHelper {
 
     if(ridingCount == 0 && parcelCount == 0){
       Get.find<SplashController>().saveOngoingRides(false);
-      if(Get.find<SplashController>().config!.maintenanceMode != null &&
-          Get.find<SplashController>().config!.maintenanceMode!.maintenanceStatus == 1 &&
-          Get.find<SplashController>().config!.maintenanceMode!.selectedMaintenanceSystem!.driverApp == 1
-      ){
+      if(Get.find<SplashController>().isUnderMaintenance){
         Get.offAll(() => const MaintenanceScreen());
       }
     }else{
@@ -58,6 +55,7 @@ class HomeScreenHelper {
         PusherHelper().tripCancelAfterOngoing(Get.find<RideController>().ongoingRideList![i].id!);
         PusherHelper().customerInitialTripCancel(Get.find<RideController>().ongoingRideList![i].id!, Get.find<ProfileController>().driverId);
         PusherHelper().tripPaymentSuccessful(Get.find<RideController>().ongoingRideList![i].id!);
+        PusherHelper().customerDepositPaid(Get.find<RideController>().ongoingRideList![i].id!);
       }
     }
   }
@@ -70,12 +68,15 @@ class HomeScreenHelper {
         PusherHelper().tripCancelAfterOngoing(Get.find<RideController>().parcelListModel!.data![i].id!);
         PusherHelper().customerInitialTripCancel(Get.find<RideController>().parcelListModel!.data![i].id!, Get.find<ProfileController>().driverId);
         PusherHelper().tripPaymentSuccessful(Get.find<RideController>().parcelListModel!.data![i].id!);
+        PusherHelper().customerDepositPaid(Get.find<RideController>().parcelListModel!.data![i].id!);
       }
     }
   }
 
 
   void checkAndShowBottomSheets(){
+    // Profile not loaded (no network): nothing is known about the vehicle yet.
+    if(Get.find<ProfileController>().profileInfo == null) return;
     if(Get.find<ProfileController>().profileInfo?.vehicle == null  &&
         Get.find<ProfileController>().isFirstTimeShowBottomSheet){
 

@@ -37,6 +37,11 @@ class Message {
    String? updatedAt;
    String? createdAt;
    List<ConversationFiles>? conversationFiles;
+   /// The other party has read it (read receipt).
+   bool isRead = false;
+   /// Shown before the server confirmed it (optimistic send).
+   bool isPending = false;
+   bool isFailed = false;
    User? user;
    Message({
      this.id,
@@ -45,7 +50,9 @@ class Message {
      this.updatedAt,
      this.conversationFiles,
      this.user,
-     this.tripId
+     this.tripId,
+     this.isRead = false,
+     this.isPending = false,
    });
 
   Message.fromJson(Map<String, dynamic> json){
@@ -62,6 +69,7 @@ class Message {
       });
     }
     user = json['user'] != null ? User.fromJson(json['user']) : null;
+    isRead = json['is_read'] == true || json['is_read'] == 1 || json['is_read'] == '1';
   }
 }
 class ConversationFiles {

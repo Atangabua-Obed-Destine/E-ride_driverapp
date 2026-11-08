@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
+import 'package:ride_sharing_user_app/features/ride/widgets/move_widgets.dart';
 import 'package:ride_sharing_user_app/common_widgets/custom_asset_image_widget.dart';
 import 'package:ride_sharing_user_app/features/auth/controllers/auth_controller.dart';
 import 'package:ride_sharing_user_app/features/dashboard/controllers/bottom_menu_controller.dart';
@@ -434,7 +435,7 @@ class CustomerRideRequestCardWidget extends StatelessWidget {
 bool _isShowBidButton(TripDetail rideRequest){
   bool bidOn = Get.find<SplashController>().config!.bidOnFare!;
 
-  return (bidOn && rideRequest.type == 'ride_request' &&
+  return (bidOn && rideRequest.type == 'ride_request' && !rideRequest.isMove &&
       rideRequest.fareBiddings != null &&
       rideRequest.fareBiddings!.isEmpty);
 }
@@ -521,7 +522,7 @@ class _CommonDesignPart extends StatelessWidget {
               borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
             ),
             child: Text(
-              rideRequest.type!.tr,
+              rideRequest.isMove ? 'move_request'.tr : rideRequest.type!.tr,
               style: textRegular.copyWith(color: Theme.of(Get.context!).cardColor),
             ),
           ),
@@ -554,7 +555,7 @@ class _CommonDesignPart extends StatelessWidget {
             Row(spacing: Dimensions.paddingSizeExtraSmall, children: [
               Image.asset(Images.circularClockIcon, height: 12, width: 12),
 
-              Text('${rideRequest.estimatedTime} ${'min_away'.tr}', style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall))
+              Text('trip_duration_minutes'.trParams({'min': '${(double.tryParse('${rideRequest.estimatedTime}') ?? 0).round()}'}), style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall))
             ]),
 
             Text('${'distance'.tr}: ${rideRequest.estimatedDistance?.toStringAsFixed(2)} Km', style: textRegular.copyWith(
@@ -579,11 +580,15 @@ class _CommonDesignPart extends StatelessWidget {
         extraOne: firstRoute, extraTwo: secondRoute, entrance: rideRequest.entrance??'',
       ),
 
+      if (rideRequest.isMove)
+        MoveLoadCard(trip: rideRequest),
+
       if(rideRequest.customer != null)
         CustomerInfoWidget(
           fromTripDetails: false,
           customer: rideRequest.customer!, fare: rideRequest.estimatedFare!,
           customerRating: rideRequest.customerAvgRating!,
+          move: rideRequest.isMove,
         ),
 
       Get.find<RideController>().matchedMode != null ?
@@ -597,7 +602,7 @@ class _CommonDesignPart extends StatelessWidget {
 
           Row(children: [
             Text(
-              Get.find<RideController>().matchedMode!.duration!,
+              _wholeMinutes(Get.find<RideController>().matchedMode!.duration!),
               style: textRegular.copyWith(color: Theme.of(Get.context!).primaryColor),
             ),
 
@@ -643,4 +648,11 @@ class _CommonDesignPart extends StatelessWidget {
   }
 }
 
-
+/// "0.05 min" -> "< 1 min", "13.57 min" -> "14 min" (anything else unchanged).
+String _wholeMinutes(String duration) {
+  final match = RegExp(r'^\s*([0-9]+(?:\.[0-9]+)?)').firstMatch(duration);
+  final value = match == null ? null : double.tryParse(match.group(1)!);
+  if (value == null || !duration.contains('min')) return duration;
+  if (value < 1) return 'less_than_a_minute'.tr;
+  return '${value.round()} ${'min'.tr}';
+}
