@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:ride_sharing_user_app/helper/deposit_helper.dart';
 import 'package:ride_sharing_user_app/helper/pusher_helper.dart';
+import 'package:ride_sharing_user_app/helper/trip_event_gate.dart';
 import 'package:ride_sharing_user_app/helper/chat_notification_helper.dart';
 import 'package:ride_sharing_user_app/features/chat/controllers/chat_inbox_controller.dart';
 import 'dart:convert';
@@ -115,8 +116,9 @@ class NotificationHelper {
       /// check maintenance mode
       if(!Get.find<SplashController>().isUnderMaintenance || Get.find<SplashController>().haveOngoingRides()){
 
-        ///Check webSocket connection
-        if (Get.find<SplashController>().pusherConnectionStatus == null || Get.find<SplashController>().pusherConnectionStatus == 'Disconnected') {
+        // Trip events also arrive over the websocket: the first of the two acts. (The
+        // status check here always passed: every connection event set "Disconnected".)
+        if (TripEventGate.shouldHandlePush(message.data)) {
           if (message.data['action'] == 'deposit_paid') {
             DepositHelper.onDepositPaid(message.data['ride_request_id']);
 
@@ -150,85 +152,6 @@ class NotificationHelper {
 
           } else if (message.data['action'] == "customer_canceled_trip" || message.data['action'] == "another_driver_assigned") {
             _whenCustomerCancelTrip(message);
-
-          } else if (checkContainsAction(message.data['action'])) {
-            Get.find<ProfileController>().getProfileInfo().then((value) {
-              if (value.statusCode == 200) {
-                Get.find<RiderMapController>().setRideCurrentState(RideState.initial);
-                Get.offAll(() => const DashboardScreen());
-              }
-            });
-
-          }else if(message.data['action'] == "customer_rejected_bid"){
-            if((Get.find<RideController>().ongoingTrip ?? []).isEmpty){
-              Get.offAll(() => const DashboardScreen());
-            }else{
-              if(Get.currentRoute == '/RideRequestScreen'){
-                Get.back();
-              }
-            }
-
-          }else if(message.data['action'] == 'identity_image_approved' || message.data['action'] == 'identity_image_rejected'){
-            Get.find<ProfileController>().getProfileInfo();
-
-          }else if(message.data['action'] == 'level_up'){
-            _whenDriverLevelUp(message);
-
-          }else if(message.data['action'] == "withdraw_request_rejected" || message.data['action'] == "withdraw_request_approved"){
-            Get.find<ProfileController>().getProfileInfo();
-            Get.find<WalletController>().getWithdrawPendingList(1);
-
-          }else if(message.data['action'] == "withdraw_request_settled"){
-            Get.find<ProfileController>().getProfileInfo();
-            Get.find<WalletController>().getWithdrawSettledList(1);
-
-          }else if(message.data['action'] == "admin_collected_cash"){
-            Get.find<ProfileController>().getProfileInfo();
-            Get.find<WalletController>().getPayableHistoryList(1);
-
-          }else if(message.data['action'] == 'parcel_returned'){
-            if(Get.isDialogOpen ?? false){
-              Get.back();
-            }
-            Get.find<RideController>().getOngoingParcelList();
-            Get.find<RideController>().getRideDetails(message.data['ride_request_id']);
-            Get.bottomSheet(ReceiptConfirmationBottomsheet());
-
-          }else if(message.data['action'] == 'parcel_canceled' || message.data['action'] == 'trip_canceled'){
-            Get.offAll(const DashboardScreen());
-
-          }else if(message.data['action'] == 'referral_reward_received'){
-            Get.find<ReferAndEarnController>().getEarningHistoryList(1);
-            Get.find<ProfileController>().getProfileInfo();
-
-          }else if(message.data['action'] == 'admin_message'){
-            Get.find<HelpAndSupportController>().getConversation(message.data['type'], 1);
-
-          }else if(message.data['action'] == 'safety_problem_resolved'){
-            Get.find<SafetyAlertController>().getSafetyAlertDetails(message.data['ride_request_id']);
-
-          }else if(message.data['action'] == 'auto_arrival_notification_driver_message'){
-            Get.find<RideController>().toggleShowDriverNearByTooltip(true);
-
-          }else if(message.data['action'] == 'trip_canceled_for_driver_identity_mismatch'){
-            Future.delayed(Duration(seconds: 1)).then((_){
-              Get.bottomSheet(TripCancelBottomSheet(
-                tripId: message.data['trip_readable_id'],
-                cancelledAt: message.data['trip_cancellation_time'],
-                reason: message.data['body'],
-              ));
-            });
-
-          }
-
-          ///If web socket Not connected
-        } else {
-          if (message.data['action'] == 'deposit_paid') {
-            DepositHelper.onDepositPaid(message.data['ride_request_id']);
-
-          } else if (message.data['action'] == "bid_accepted") {
-            ///Bid Ride Accepted in this case....
-            _whenCustomerBidAccept(message);
 
           } else if (checkContainsAction(message.data['action'])) {
             Get.find<ProfileController>().getProfileInfo().then((value) {
