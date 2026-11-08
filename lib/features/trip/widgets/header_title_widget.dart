@@ -14,7 +14,7 @@ class HeaderTitle extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
       child: Container(width: width ?? Get.width,
-        transform: Matrix4.translationValues(0, -30, 0),
+        transform: Matrix4.translationValues(0, -14, 0), // was -30: covered the app bar title under a tall status bar
         decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(Dimensions.paddingSizeDefault),

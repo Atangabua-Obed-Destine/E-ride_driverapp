@@ -4,7 +4,6 @@ import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/features/auth/controllers/auth_controller.dart';
 import 'package:ride_sharing_user_app/features/dashboard/screens/dashboard_screen.dart';
-import 'package:ride_sharing_user_app/helper/responsive_helper.dart';
 import 'package:ride_sharing_user_app/helper/svg_image_helper.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
@@ -208,7 +207,7 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
 
               ]),
 
-              Positioned(top: Get.height * (GetPlatform.isIOS ? ResponsiveHelper.isTab ? 0.10 : 0.14 :  0.11), left: 10,right: 10,
+              Positioned(top: AppBarWidget.overlayTop(context), left: 10,right: 10,
                 child: SizedBox(height: Dimensions.headerCardHeight,
                   child: ListView.builder(
                     shrinkWrap: true,

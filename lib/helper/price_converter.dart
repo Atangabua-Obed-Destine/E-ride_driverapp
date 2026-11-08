@@ -1,3 +1,4 @@
+import 'package:ride_sharing_user_app/features/splash/domain/models/config_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
@@ -5,9 +6,10 @@ import 'package:ride_sharing_user_app/features/splash/controllers/splash_control
 class PriceConverter {
 
   static String convertPrice(BuildContext context, double price, {double? discount, String? discountType}) {
-    bool inRight = Get.find<SplashController>().config!.currencySymbolPosition == 'right';
-    String decimal = Get.find<SplashController>().config!.currencyDecimalPoint?? '1';
-    String symbol = Get.find<SplashController>().config!.currencySymbol?? '\$';
+    final ConfigModel? config = Get.find<SplashController>().config;
+    bool inRight = config?.currencySymbolPosition == 'right';
+    String decimal = config?.currencyDecimalPoint ?? '1';
+    String symbol = config?.currencySymbol ?? '\$';
     String finalResult;
     if(discount != null && discountType != null){
       if(discountType == 'amount') {

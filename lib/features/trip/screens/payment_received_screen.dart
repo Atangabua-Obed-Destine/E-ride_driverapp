@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:ride_sharing_user_app/features/ride/domain/models/final_fare_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
@@ -104,7 +105,7 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> with Widg
                 padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                 child: Container(
                   width:Get.width,
-                  transform: Matrix4.translationValues(0, -30, 0),
+                  transform: Matrix4.translationValues(0, -14, 0), // was -30: covered the app bar title under a tall status bar
                   decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(Dimensions.paddingSizeDefault),
@@ -172,6 +173,7 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> with Widg
                         Padding(
                           padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                           child: Text(
+                            depositCredit(finalFareController.finalFare) > 0 ? 'collect_in_cash'.tr :
                             ((finalFareController.finalFare?.discountAmount ?? 0) + (finalFareController.finalFare?.couponAmount ?? 0)) > 0 ?
                             'customer_will_pay'.tr : 'total_trip_cost'.tr,
                             style: textBold.copyWith(
@@ -184,7 +186,8 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> with Widg
                         Padding(
                           padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                           child: Text(
-                            PriceConverter.convertPrice(context, finalFareController.finalFare?.paidFare?? 0),
+                            // The customer already paid the booking deposit in the app.
+                            PriceConverter.convertPrice(context, (finalFareController.finalFare?.paidFare ?? 0) - depositCredit(finalFareController.finalFare)),
                             style: textRobotoBold.copyWith(
                               color: Theme.of(context).primaryColor,
                               fontSize: Dimensions.fontSizeOverLarge,
@@ -369,6 +372,22 @@ class _PaymentReceivedScreenState extends State<PaymentReceivedScreen> with Widg
                         ),
                       )
                     ]),
+
+                    if (depositCredit(finalFareController.finalFare) > 0) ...[
+                      const SizedBox(height: Dimensions.paddingSizeSmall),
+                      PaymentItemInfoWidget(icon: Images.farePrice,
+                        title: 'deposit_paid_in_app'.tr,
+                        amount: depositCredit(finalFareController.finalFare),
+                        discount: true,
+                      ),
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Text('collect_in_cash'.tr, style: textBold.copyWith(color: Theme.of(context).primaryColor)),
+                        Text(
+                          PriceConverter.convertPrice(context, (finalFareController.finalFare?.paidFare ?? 0) - depositCredit(finalFareController.finalFare)),
+                          style: textRobotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Get.isDarkMode ? Colors.white : Theme.of(context).primaryColor),
+                        ),
+                      ]),
+                    ],
                     const SizedBox(height: Dimensions.paddingSizeSmall)
                   ]),
                 ),
@@ -430,4 +449,12 @@ class SummeryItem extends StatelessWidget {
   }
 }
 
-
+/// The part of the fare the customer already paid in the app as a booking
+/// deposit (not collected in cash).
+double depositCredit(FinalFare? fare) {
+  final deposit = fare?.deposit;
+  if (fare == null || deposit == null || !(deposit.isPaid || deposit.isApplied)) return 0;
+  final paid = fare.paidFare ?? 0;
+  if (fare.amountDue != null) return (paid - fare.amountDue!).clamp(0, paid).toDouble();
+  return deposit.amount < paid ? deposit.amount : paid;
+}

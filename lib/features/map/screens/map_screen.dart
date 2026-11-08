@@ -320,6 +320,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver{
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Center(child: GetBuilder<RideController>(builder: (rideController) {
+                    // Nothing waiting: no "0 More request" pill.
+                    if ((rideController.pendingRideRequestModel?.totalSize ?? 0) == 0) return const SizedBox.shrink();
                     return InkWell(onTap: () => Get.to(()=> const RideRequestScreen()),
                       child: Container(
                         decoration: BoxDecoration(color: Theme.of(context).primaryColor,

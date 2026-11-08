@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sounds referenced by name from Dart; keep them if resource shrinking is ever turned on. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/notification,@raw/ride_request_ring" />

@@ -1,3 +1,4 @@
+import 'package:ride_sharing_user_app/helper/chat_notification_helper.dart';
 import 'package:camera/camera.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -8,9 +9,9 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/features/splash/screens/splash_screen.dart';
+import 'dart:convert';
 import 'package:ride_sharing_user_app/helper/notification_helper.dart';
-import 'package:ride_sharing_user_app/util/dimensions.dart';
-import 'package:ride_sharing_user_app/util/images.dart';
+import 'package:ride_sharing_user_app/helper/ride_request_ringer.dart';
 import 'package:ride_sharing_user_app/features/map/screens/map_screen.dart';
 import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
 import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
@@ -34,18 +35,7 @@ Future<void> main() async {
   );
 
   WidgetsFlutterBinding.ensureInitialized();
-  if(GetPlatform.isAndroid) {
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: "AIzaSyCFGqSEiWMItei_AFIUgdM53PWrvyGmjFY",
-        appId: "1:76471554747:android:28346318a6d400326d0f9e",
-        messagingSenderId: "76471554747",
-        projectId: "drivevalley-fdb7f",
-      ),
-    );
-  } else {
-    await Firebase.initializeApp();
-  }
+  await Firebase.initializeApp();
 
   cameras = await availableCameras();
 
@@ -54,6 +44,33 @@ Future<void> main() async {
   final RemoteMessage? remoteMessage = await FirebaseMessaging.instance.getInitialMessage();
 
   await NotificationHelper.initialize(flutterLocalNotificationsPlugin);
+  await RideRequestRinger.ensureChannel(flutterLocalNotificationsPlugin);
+  await ChatNotificationHelper.ensureChannel(flutterLocalNotificationsPlugin);
+
+  // Opened by tapping the ringing request notification while the app was
+  // closed: route to that request the same way an FCM tap does.
+  Map<String, dynamic>? launchData = remoteMessage?.data;
+  final NotificationAppLaunchDetails? launch = await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+  final NotificationResponse? launchResponse = launch?.notificationResponse;
+  if ((launch?.didNotificationLaunchApp ?? false) && launchResponse?.actionId != RideRequestRinger.actionDismiss) {
+    final String? payload = launchResponse?.payload;
+    if (payload != null && payload.startsWith('{')) {
+      try {
+        final Map<String, dynamic> data = Map<String, dynamic>.from(jsonDecode(payload) as Map);
+        if (RideRequestRinger.depositActions.contains(data['action'])) {
+          // Opened from the "deposit received" alert: go to that trip.
+          launchData = data;
+          RideRequestRinger.cancelDepositPaid(data['ride_request_id'] as String?, flutterLocalNotificationsPlugin);
+        } else if (RideRequestRinger.requestActions.contains(data['action'])) {
+          launchData = data;
+          RideRequestRinger.cancel(data['ride_request_id'] as String?, flutterLocalNotificationsPlugin);
+        } else if (ChatNotificationHelper.isChatPush(data)) {
+          launchData = data;
+          ChatNotificationHelper.cancelConversation(ChatNotificationHelper.conversationOf(data), flutterLocalNotificationsPlugin);
+        }
+      } catch (_) {}
+    }
+  }
 
   FirebaseMessaging.onBackgroundMessage(myBackgroundMessageHandler);
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -61,7 +78,7 @@ Future<void> main() async {
   await FlutterDownloader.initialize(debug: true, ignoreSsl: true);
 
 
-  runApp(MyApp(languages: languages, notificationData: remoteMessage?.data));
+  runApp(MyApp(languages: languages, notificationData: launchData));
 }
 
 class MyApp extends StatelessWidget {
@@ -108,9 +125,7 @@ class MyApp extends StatelessWidget {
                       return Stack(children: [
                           child!,
                           if(rideController.notSplashRoute)...[
-                            if(!(Get.find<SplashController>().config!.maintenanceMode != null &&
-                                Get.find<SplashController>().config!.maintenanceMode!.maintenanceStatus == 1 &&
-                                Get.find<SplashController>().config!.maintenanceMode!.selectedMaintenanceSystem!.driverApp == 1) || Get.find<SplashController>().haveOngoingRides())...[
+                            if(!Get.find<SplashController>().isUnderMaintenance || Get.find<SplashController>().haveOngoingRides())...[
                               Positioned(top: Get.height * 0.3, right: 0,
                                   child: GestureDetector(
                                       onTap: () async{
@@ -124,16 +139,26 @@ class MyApp extends StatelessWidget {
                                         _onHorizontalDrag(details);
                                         Get.to(()=> const MapScreen());
                                       },
-                                      child: Stack(children: [
-                                        SizedBox(width: Dimensions.iconSizeExtraLarge,
-                                            child: Image.asset(Images.homeToMapIcon, color: Theme.of(context).primaryColor)),
-                                        Positioned(top: 0, bottom: 0, left: 5, right: 5, child: SizedBox(width: 15,child: Image.asset(
-                                            Images.map,
-                                            color: Get.isDarkMode ?
-                                            Theme.of(context).textTheme.bodyMedium!.color :
-                                            Theme.of(context).colorScheme.shadow
-                                        )))
-                                      ]),
+                                      // A slim tab on the screen edge (was a wide red half
+                                      // disc that covered content on every screen).
+                                      child: Semantics(
+                                        button: true,
+                                        label: 'map'.tr,
+                                        child: Container(
+                                          width: 30,
+                                          height: 58,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF1C1C1E).withValues(alpha: 0.92),
+                                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+                                            border: Border(left: BorderSide(color: Theme.of(context).primaryColor, width: 2.5)),
+                                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 10, offset: const Offset(-2, 3))],
+                                          ),
+                                          child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                            Icon(Icons.map_rounded, color: Colors.white, size: 16),
+                                            Icon(Icons.chevron_left_rounded, color: Colors.white70, size: 14),
+                                          ]),
+                                        ),
+                                      ),
                                   ),
                               ),
                             ]

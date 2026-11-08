@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/features/dashboard/screens/dashboard_screen.dart';
-import 'package:ride_sharing_user_app/helper/responsive_helper.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/features/notification/widgets/notification_shimmer_widget.dart';
 import 'package:ride_sharing_user_app/features/review/controllers/review_controller.dart';
@@ -101,7 +100,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 ),
               ]),
 
-              Positioned(top: Get.height * (GetPlatform.isIOS ? ResponsiveHelper.isTab ? 0.10 : 0.14 :  0.11), left: Dimensions.paddingSizeSmall,
+              Positioned(top: AppBarWidget.overlayTop(context), left: Dimensions.paddingSizeSmall,
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   SizedBox(height: Dimensions.headerCardHeight,
                     child: ListView.builder(

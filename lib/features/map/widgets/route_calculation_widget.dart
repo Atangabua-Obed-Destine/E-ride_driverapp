@@ -1,3 +1,9 @@
+import 'package:ride_sharing_user_app/common_widgets/trip_arrival_card.dart';
+import 'package:ride_sharing_user_app/helper/price_converter.dart';
+import 'package:ride_sharing_user_app/common_widgets/waiting_charge_card.dart';
+import 'package:ride_sharing_user_app/common_widgets/call_options_sheet.dart';
+import 'package:ride_sharing_user_app/common_widgets/unread_badge.dart';
+import 'package:ride_sharing_user_app/features/chat/controllers/chat_inbox_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
@@ -98,6 +104,30 @@ class RouteCalculationWidget extends StatelessWidget {
                   ]),
                 ]),
 
+                // How close the trip is to the drop-off, always visible on the way.
+                if(!fromEnd && rideController.tripDetail!.currentStatus == 'ongoing')
+                  Padding(
+                    padding: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),
+                    child: TripArrivalCard(
+                      remainingKm: rideController.matchedMode?.distance,
+                      totalKm: rideController.tripDetail!.estimatedDistance,
+                      eta: rideController.matchedMode?.duration,
+                      forDriver: true,
+                      margin: EdgeInsets.zero,
+                    ),
+                  ),
+
+                if(rideController.tripDetail!.type != 'parcel' && !rideController.tripDetail!.isMove && !fromEnd && (rideController.tripDetail!.waiting?.worthShowing ?? false))
+                  Padding(
+                    padding: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),
+                    child: WaitingChargeCard(
+                      waiting: rideController.tripDetail!.waiting!,
+                      forDriver: true,
+                      formatPrice: (amount) => PriceConverter.convertPrice(context, amount),
+                      margin: EdgeInsets.zero,
+                    ),
+                  ),
+
                 if(rideController.tripDetail!.type != 'parcel' && !fromEnd)
                   Padding(
                     padding: const EdgeInsets.only(top: Dimensions.paddingSizeExtraLarge),
@@ -185,17 +215,22 @@ class RouteCalculationWidget extends StatelessWidget {
                     rideController.tripDetail!.customer!.id!,
                     tripId: rideController.tripDetail!.id,
                   ),
-                  child: SizedBox(
-                    width: Dimensions.iconSizeLarge,
-                    child: Image.asset(Images.customerMessage, color: Theme.of(context).primaryColor),
-                  ),
+                  child: GetBuilder<ChatInboxController>(builder: (inbox) => UnreadBadge(
+                    count: inbox.unreadForTrip(rideController.tripDetail?.id),
+                    offset: const Offset(-9, -8),
+                    child: SizedBox(
+                      width: Dimensions.iconSizeLarge,
+                      child: Image.asset(Images.customerMessage, color: Theme.of(context).primaryColor),
+                    ),
+                  )),
                 ),
 
                 Container(width: 1,height: 25,color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.15)),
 
                 InkWell(
-                  onTap: ()=> Get.find<SplashController>().sendMailOrCall(
-                    "tel:${rideController.tripDetail!.customer!.phone}", false,
+                  onTap: () => CallOptionsSheet.show(
+                    phone: rideController.tripDetail?.customer?.phone,
+                    name: '${rideController.tripDetail?.customer?.firstName ?? ''} ${rideController.tripDetail?.customer?.lastName ?? ''}',
                   ),
                   child: SizedBox(
                     width: Dimensions.iconSizeLarge,

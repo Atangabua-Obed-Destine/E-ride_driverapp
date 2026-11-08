@@ -10,6 +10,7 @@ abstract class RideServiceInterface {
   Future<dynamic> ignoreMessage(String tripId);
   Future<dynamic> matchOtp(String tripId, String otp, List<MultipartBody> identityImage);
   Future<dynamic> startForPickup(String tripId);
+  Future<dynamic> moveNoAgreement(String tripId);
   Future<dynamic> remainDistance(String id);
   Future<dynamic> tripStatusUpdate(String status, String id,String cancellationCause,String dateTime, List<MultipartBody> proofImages);
   Future<dynamic> getPendingRideRequestList(int offset, {int limit = 10});

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Splash canvas. Must stay in sync with kSplashInk / kSplashInkLow in
+        lib/features/splash/widgets/splash_backdrop.dart, otherwise the screen
+        changes colour when Flutter takes over from the system launch screen.
+    -->
+    <color name="splash_ink">#0E0E12</color>
+    <color name="splash_ink_low">#16161C</color>
+    <color name="brand_red">#D31111</color>
+</resources>

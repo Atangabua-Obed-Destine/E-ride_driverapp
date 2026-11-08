@@ -6,7 +6,6 @@ import 'package:ride_sharing_user_app/features/profile/widgets/profile_details_w
 import 'package:ride_sharing_user_app/features/profile/widgets/profile_level_details_widget.dart';
 import 'package:ride_sharing_user_app/features/profile/widgets/vehicle_details_widget.dart';
 import 'package:ride_sharing_user_app/features/wallet/controllers/wallet_controller.dart';
-import 'package:ride_sharing_user_app/helper/responsive_helper.dart';
 import 'package:ride_sharing_user_app/localization/localization_controller.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
@@ -188,7 +187,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ))
               ]),
 
-              Positioned( top: Get.height * (GetPlatform.isIOS ? ResponsiveHelper.isTab ? 0.10 : 0.14 :  0.11), left: Dimensions.paddingSizeSmall,
+              Positioned( top: AppBarWidget.overlayTop(context), left: Dimensions.paddingSizeSmall,
                 child: SizedBox(height: Get.find<LocalizationController>().isLtr? 45 : 50,
                   width: Get.width-Dimensions.paddingSizeDefault,
                   child: Center(

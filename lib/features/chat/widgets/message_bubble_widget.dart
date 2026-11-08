@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:ride_sharing_user_app/common_widgets/chat_kit.dart';
 import 'package:ride_sharing_user_app/common_widgets/popup_banner/popup_banner.dart';
 import 'package:ride_sharing_user_app/helper/date_converter.dart';
 import 'package:ride_sharing_user_app/localization/localization_controller.dart';
@@ -21,7 +22,9 @@ class ConversationBubbleWidget extends StatefulWidget {
   final Message? previousMessage;
   final int index;
   final int length;
-  const ConversationBubbleWidget({super.key,  required this.message,  this.previousMessage, required this.index, required this.length});
+  /// Called when a message that failed to send is tapped.
+  final VoidCallback? onRetry;
+  const ConversationBubbleWidget({super.key,  required this.message,  this.previousMessage, required this.index, required this.length, this.onRetry});
   @override
   State<ConversationBubbleWidget> createState() => _ConversationBubbleWidgetState();
 }
@@ -82,13 +85,36 @@ class _ConversationBubbleWidgetState extends State<ConversationBubbleWidget> {
                     mainAxisSize: MainAxisSize.min, children: [
                       if(widget.message.message != null)
                       Flexible(child: Padding(padding: (widget.message.user!.id! == Get.find<ProfileController>().driverId) ? EdgeInsets.only(left:Get.width *0.15 ) :  EdgeInsets.only(right:Get.width *0.1),
-                        child: Container(
-                            decoration: BoxDecoration(
-                              color: (widget.message.user!.id! == Get.find<ProfileController>().driverId)?
-                              Theme.of(context).hintColor.withValues(alpha: 0.20) : Theme.of(context).hintColor.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(10)),
-                            child:  Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-                              child: Text(widget.message.message??'', style: textRegular.copyWith(),))),
+                        child: Builder(builder: (context) {
+                          final bool isMe = widget.message.user!.id! == Get.find<ProfileController>().driverId;
+                          return GestureDetector(
+                            onTap: widget.message.isFailed ? widget.onRetry : null,
+                            child: AnimatedOpacity(
+                              duration: const Duration(milliseconds: 200),
+                              opacity: widget.message.isPending ? 0.75 : 1,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isMe ? Theme.of(context).primaryColor : (Get.isDarkMode ? const Color(0xFF2C2C2E) : Colors.white),
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(18),
+                                    topRight: const Radius.circular(18),
+                                    bottomLeft: Radius.circular(isMe ? 18 : 6),
+                                    bottomRight: Radius.circular(isMe ? 6 : 18),
+                                  ),
+                                  boxShadow: isMe ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  child: Text(widget.message.message??'', style: TextStyle(
+                                    color: isMe ? Colors.white : (Get.isDarkMode ? Colors.white : const Color(0xFF1C1C1E)),
+                                    fontSize: 15,
+                                    height: 1.3,
+                                  )),
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
                       )),
 
 
@@ -188,11 +214,30 @@ class _ConversationBubbleWidgetState extends State<ConversationBubbleWidget> {
       ),
 
       Padding(padding: (widget.message.user!.id! == Get.find<ProfileController>().driverId) ?
-      const EdgeInsets.fromLTRB(5, 0, 50, 15) : const EdgeInsets.fromLTRB(50, 0, 5, 15),
-          child: Text(DateConverter.isoDateTimeStringToDifferentWithCurrentTime(widget.message.createdAt!),
-              textDirection: TextDirection.ltr, style: textRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall,color: Theme.of(context).hintColor))),
+      const EdgeInsets.fromLTRB(5, 0, 12, 12) : const EdgeInsets.fromLTRB(50, 0, 5, 12),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            if (widget.message.isFailed)
+              GestureDetector(
+                onTap: widget.onRetry,
+                child: Text('not_sent_tap_to_retry'.tr,
+                  style: textRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).colorScheme.error)),
+              )
+            else
+              Text(
+                widget.message.isPending ? 'sending'.tr : DateConverter.isoDateTimeStringToDifferentWithCurrentTime(widget.message.createdAt ?? DateTime.now().toString()),
+                textDirection: TextDirection.ltr, style: textRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall,color: Theme.of(context).hintColor)),
+            if (widget.message.user!.id! == Get.find<ProfileController>().driverId) ...[
+              const SizedBox(width: 4),
+              MessageTicks(
+                pending: widget.message.isPending,
+                failed: widget.message.isFailed,
+                read: widget.message.isRead,
+                color: Theme.of(context).hintColor,
+              ),
+            ],
+          ])),
 
-      if((widget.message.tripId != widget.previousMessage?.tripId! && widget.previousMessage != null))
+      if(widget.previousMessage != null && widget.previousMessage?.tripId != null && widget.message.tripId != widget.previousMessage?.tripId)
           Center(child: Text("${DateConverter.stringToLocalDateOnly(widget.previousMessage?.createdAt??DateTime.now().toString())}, ${'trip'.tr}# ${widget.index==0 ? widget.message.tripId : widget.previousMessage?.tripId}",
             style: textRegular.copyWith(color: Theme.of(context).hintColor),)),
     ],

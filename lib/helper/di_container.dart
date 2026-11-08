@@ -1,3 +1,4 @@
+import 'package:ride_sharing_user_app/features/chat/controllers/chat_inbox_controller.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:ride_sharing_user_app/features/auth/controllers/auth_controller.dart';
@@ -250,6 +251,7 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(() => RideController(rideServiceInterface: Get.find()));
   Get.lazyPut(() => ProfileController(profileServiceInterface: Get.find()));
   Get.lazyPut(() => ChatController(chatServiceInterface: Get.find()));
+  Get.lazyPut(() => ChatInboxController(messageServiceInterface: Get.find()), fenix: true);
   Get.lazyPut(() => ReviewController(reviewServiceInterface: Get.find()));
   Get.lazyPut(() => LeaderBoardController(leaderBoardServiceInterface: Get.find()));
   Get.lazyPut(() => HelpAndSupportController(helpAndSupportServiceInterface: Get.find()));

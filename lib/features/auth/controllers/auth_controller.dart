@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:app_settings/app_settings.dart';
-import 'package:country_code_picker/country_code_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -786,7 +785,7 @@ class AuthController extends GetxController with WidgetsBindingObserver implemen
         _additionalFieldControllers[field.id] = TextEditingController();
         _additionalFieldFocusNodes[field.id] = FocusNode();
         if (field.fieldType == AdditionalFieldType.phone) {
-          _additionalFieldPhoneCountryCodes[field.id] = CountryCode.fromCountryCode(Get.find<SplashController>().config!.countryCode!).dialCode ?? '+237';
+          _additionalFieldPhoneCountryCodes[field.id] = Get.find<SplashController>().countryDialCode;
         }
       }
     }

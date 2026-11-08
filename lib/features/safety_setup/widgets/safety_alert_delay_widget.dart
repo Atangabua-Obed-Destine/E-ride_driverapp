@@ -80,18 +80,15 @@ class SafetyAlertDelayWidget extends StatelessWidget {
     );
   }
 
+  /// "We noticed that your trip hasn't progressed for 1 min. If you…"
+  /// The admin setting is in seconds; when it is not set the check runs
+  /// every 60 s (it used to print "0" with no unit).
   String _typeWiseConvertTime(int time, String type){
-    int calculateTime = 0;
-    if(type == 'second'){
-      calculateTime = time;
-    }else if(type == 'minute'){
-      calculateTime = (time/60).toInt();
-    }else{
-      calculateTime = (time/3600).toInt();
-    }
-
-    return '${'we_notice_that_you_are_stuck_at_a_place'.tr}$calculateTime'
-        ' ${(Get.find<SplashController>().config?.safetyFeatureMinimumTripDelayTimeType ?? '').tr} ${'if_you_face_any_safety_issue'.tr}';
+    final int seconds = time > 0 ? time : 60;
+    final String amount = seconds >= 3600
+        ? '${(seconds / 3600).round()} h'
+        : seconds >= 60 ? '${(seconds / 60).round()} ${'min_short'.tr}' : '$seconds s';
+    return '${'we_notice_that_you_are_stuck_at_a_place'.tr}$amount${'if_you_face_any_safety_issue'.tr}';
   }
 
 }

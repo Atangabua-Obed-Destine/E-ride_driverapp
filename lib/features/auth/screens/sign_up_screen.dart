@@ -43,7 +43,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
               Expanded(
                 child: SingleChildScrollView(child: Column(children: [
-                  SvgPicture.asset(Images.logoWithNameSvg, height: 40),
+                  Image.asset(Images.logoWithName, height: 60),
                   const SizedBox(height: Dimensions.paddingSizeSignUp),
 
                   FutureBuilder<String>(

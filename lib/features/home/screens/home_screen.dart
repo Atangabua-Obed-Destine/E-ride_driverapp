@@ -1,3 +1,4 @@
+import 'package:ride_sharing_user_app/features/chat/controllers/chat_inbox_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
@@ -25,9 +26,9 @@ import 'package:ride_sharing_user_app/features/home/widgets/profile_info_card_wi
 import 'package:ride_sharing_user_app/features/home/widgets/vehicle_pending_widget.dart';
 import 'package:ride_sharing_user_app/features/profile/screens/profile_menu_screen.dart';
 import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
-import 'package:ride_sharing_user_app/common_widgets/app_bar_widget.dart';
-import 'package:ride_sharing_user_app/common_widgets/sliver_delegate.dart';
+import 'package:ride_sharing_user_app/features/home/widgets/home_header.dart';
 import 'package:ride_sharing_user_app/common_widgets/zoom_drawer_context_widget.dart';
+import 'package:ride_sharing_user_app/features/splash/widgets/splash_backdrop.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
 
 class HomeMenu extends GetView<ProfileController> {
@@ -43,7 +44,7 @@ class HomeMenu extends GetView<ProfileController> {
         borderRadius: 24.0,
         isRtl: !Get.find<LocalizationController>().isLtr,
         angle: -5.0,
-        menuBackgroundColor: Theme.of(context).primaryColor,
+        menuBackgroundColor: kSplashInk,
         slideWidth: MediaQuery.of(context).size.width * 0.85,
         mainScreenScale: .4,
         mainScreenTapClose: true,
@@ -82,6 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
     loadData();
 
     super.initState();
+    // Unread chat badges (menu button, menu, trip card).
+    Get.find<ChatInboxController>().refreshUnread();
   }
 
   @override
@@ -160,17 +163,9 @@ class _HomeScreenState extends State<HomeScreen> {
             CustomScrollView(
                 controller: _scrollController,
                 slivers: [
-                  SliverPersistentHeader(pinned: true, delegate: SliverDelegate(
-                  height: GetPlatform.isIOS ? 150 : 120,
-                  child: Column(children: [
-                    AppBarWidget(
-                      title: 'dashboard'.tr, showBackButton: false,
-                      onTap: (){
-                        Get.find<ProfileController>().toggleDrawer();
-                      },
-                    ),
-                  ])
-                  )),
+                  // The header is pinned, so it lives in the Stack below rather
+                  // than in the sliver list; this just reserves its height.
+                  SliverToBoxAdapter(child: SizedBox(height: HomeHeader.heightOf(context))),
 
                   SliverToBoxAdapter(child: GetBuilder<ProfileController>(builder: (profileController) {
                     return profileController.profileInfo != null ?
@@ -246,6 +241,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ]
             ),
 
+            Positioned(
+              top: 0, left: 0, right: 0,
+              child: HomeHeader(onMenuTap: () => Get.find<ProfileController>().toggleDrawer()),
+            ),
+
             GetBuilder<ProfileController>(builder: (profileController){
               return profileController.isCashInHandHoldAccount ?
               CashInHandWarningWidget() :
@@ -253,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
               HomeFaceVerificationWarningWidget() : const SizedBox();
             }),
 
-            Positioned(top: GetPlatform.isIOS ? 120 : 90, left: 0, right: 0,
+            Positioned(top: HomeHeader.cardTopOf(context), left: 0, right: 0,
               child: GetBuilder<ProfileController>(builder: (profileController) {
                 return GestureDetector(
                     onTap: (){

@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.sixamtech.hexariderider"
+    namespace = "com.i_nnova.eridedriver"
     compileSdk = 36
 
     compileOptions {
@@ -28,7 +28,7 @@ android {
 
     defaultConfig {
         multiDexEnabled = true
-        applicationId = "com.sixamtech.hexariderider"
+        applicationId = "com.i_nnova.eridedriver"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = flutter.versionCode

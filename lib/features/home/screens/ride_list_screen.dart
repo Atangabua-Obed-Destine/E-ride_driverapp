@@ -191,6 +191,7 @@ class _TripCardWidget extends StatelessWidget {
                   fromTripDetails: false,
                   customer: rideRequest.customer!, fare: rideRequest.estimatedFare!,
                   customerRating: rideRequest.customerAvgRating!,
+                  move: rideRequest.isMove,
                 ),
             ]),
           ),

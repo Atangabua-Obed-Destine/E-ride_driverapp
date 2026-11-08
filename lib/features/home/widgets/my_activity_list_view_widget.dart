@@ -25,7 +25,9 @@ class MyActivityListViewWidget extends StatelessWidget {
           offlineSec = (profileController.timeTrack?.totalOffline ?? 0).floor();
         }
         return profileController.profileInfo != null ?
-        SizedBox(height: Get.find<LocalizationController>().isLtr? 80 : 85,
+        // Tall enough for the tile (padding + icon tile + figure) with room
+        // for a larger system text size.
+        SizedBox(height: Get.find<LocalizationController>().isLtr? 112 : 118,
             child: ListView(shrinkWrap: true, scrollDirection: Axis.horizontal, children:  [
               MyActivityCardWidget(title: 'active',icon: Images.activeHourIcon, index: 0,value: activeSec, color: Theme.of(Get.context!).colorScheme.tertiary),
               MyActivityCardWidget(title: 'on_driving',icon: Images.onDrivingHourIcon, index: 0,value: drivingSec, color: Theme.of(Get.context!).colorScheme.secondary),

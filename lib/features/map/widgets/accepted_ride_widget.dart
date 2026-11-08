@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
+import 'package:ride_sharing_user_app/features/ride/widgets/move_widgets.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
+import 'package:ride_sharing_user_app/util/app_constants.dart';
 import 'package:ride_sharing_user_app/common_widgets/button_widget.dart';
 import 'package:ride_sharing_user_app/common_widgets/expandable_bottom_sheet.dart';
 import 'package:ride_sharing_user_app/common_widgets/swipable_button/slider_buttion_widget.dar.dart';
@@ -15,6 +17,7 @@ import 'package:ride_sharing_user_app/features/map/widgets/parcel_image_proof_wi
 import 'package:ride_sharing_user_app/features/map/widgets/ride_cancelation_list.dart';
 import 'package:ride_sharing_user_app/features/map/widgets/otp_verification_widget.dart';
 import 'package:ride_sharing_user_app/features/map/widgets/rider_details_widget.dart';
+import 'package:ride_sharing_user_app/features/map/widgets/deposit_waiting_banner.dart';
 import 'package:ride_sharing_user_app/features/map/widgets/route_widget.dart';
 import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
 import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
@@ -231,10 +234,16 @@ class _AcceptedTripWidgetState extends State<_AcceptedTripWidget> {
         }
         estDistance = double.parse(totalDistance).toStringAsFixed(2);
 
+        final waitingForDeposit = DepositWaitingBanner.blocks(rideController.tripDetail);
         return Padding(padding: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),
           child: Column(children: [
+            // The customer pays the booking deposit first; until then the
+            // driver waits and cannot set off or start.
+            DepositWaitingBanner(trip: rideController.tripDetail!),
+            MoveNoAgreementButton(trip: rideController.tripDetail!),
+
             if(rideController.tripDetail?.type == 'parcel')...[
-              if(Get.find<SplashController>().config?.otpConfirmationForTrip ?? false)
+              if(!waitingForDeposit && (Get.find<SplashController>().config?.otpConfirmationForTrip ?? false))
                 (riderController.currentRideState == RideState.outForPickup && riderController.isInside ) ?
                  OtpVerificationWidget(
                    onTap: (){
@@ -314,7 +323,7 @@ class _AcceptedTripWidgetState extends State<_AcceptedTripWidget> {
                     Row(spacing: Dimensions.paddingSizeExtraSmall, children: [
                       Image.asset(Images.circularClockIcon, height: 12, width: 12),
 
-                      Text('${rideController.tripDetail?.estimatedTime} ${'min_away'.tr}', style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall))
+                      Text('trip_duration_minutes'.trParams({'min': '${(double.tryParse('${rideController.tripDetail?.estimatedTime}') ?? 0).round()}'}), style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall))
                     ]),
 
                     Text('${'distance'.tr}: ${rideController.matchedMode?.distanceText}', style: textRegular.copyWith(
@@ -372,7 +381,10 @@ class _AcceptedTripWidgetState extends State<_AcceptedTripWidget> {
               ),
             const SizedBox(height: Dimensions.paddingSizeDefault),
 
-            _FareDetailsWidget(rideController: rideController),
+            if (rideController.tripDetail!.isMove)
+              MoveLoadCard(trip: rideController.tripDetail!)
+            else
+              _FareDetailsWidget(rideController: rideController),
             const SizedBox(height: Dimensions.paddingSizeDefault),
 
             if (rideController.tripDetail?.pickupNote != null && (rideController.tripDetail?.pickupNote ?? '').isNotEmpty) ...[
@@ -412,7 +424,9 @@ class _AcceptedTripWidgetState extends State<_AcceptedTripWidget> {
               const SizedBox(height: Dimensions.paddingSizeSmall)
             ],
 
-            if(rideController.tripDetail?.type == 'parcel')...[
+            if(waitingForDeposit)...[
+              // Nothing to start yet.
+            ]else if(rideController.tripDetail?.type == 'parcel')...[
               if(!(Get.find<SplashController>().config?.otpConfirmationForTrip ?? false))...[
                 rideController.isPinVerificationLoading ?
                 SizedBox(width: 30,height: 30,child: CircularProgressIndicator(color: Theme.of(context).primaryColor)) :
@@ -542,16 +556,6 @@ class _FareDetailsWidgetState extends State<_FareDetailsWidget> {
   JustTheController tooltipController = JustTheController();
 
   @override
-  void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if(Get.find<RideController>().tripDetail?.type == 'parcel'){
-        tooltipController.showTooltip();
-      }
-    });
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -584,6 +588,10 @@ class _FareDetailsWidgetState extends State<_FareDetailsWidget> {
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
                 child: Text(
+                  // Already paid in the app (food & shop orders, digital parcels):
+                  // nothing to collect from anyone.
+                  widget.rideController.tripDetail?.paymentStatus == AppConstants.paid ?
+                  'prepaid_do_not_collect'.tr :
                   (widget.rideController.tripDetail?.parcelInformation?.payer ?? 'sender') == 'sender' ?
                   'sender_will_pay'.tr : 'receiver_will_pay'.tr,
                   style: textRegular.copyWith(fontSize: 12),
@@ -633,7 +641,7 @@ class _FareDetailsWidgetState extends State<_FareDetailsWidget> {
                 controller: tooltipController,
                 preferredDirection: AxisDirection.up,
                 tailLength: 10,
-                isModal: true,
+                triggerMode: TooltipTriggerMode.tap,
                 tailBaseWidth: 20,
                 content: Container(width: 200,
                   padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),

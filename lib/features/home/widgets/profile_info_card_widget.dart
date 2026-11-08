@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_switch/flutter_switch.dart';
 import 'package:get/get.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
-import 'package:ride_sharing_user_app/common_widgets/confirmation_bottomsheet_widget.dart';
-import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
-import 'package:ride_sharing_user_app/helper/display_helper.dart';
-import 'package:ride_sharing_user_app/helper/home_screen_helper.dart';
+import 'package:ride_sharing_user_app/helper/driving_status_helper.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
 import 'package:ride_sharing_user_app/features/profile/controllers/profile_controller.dart';
 import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
 import 'package:ride_sharing_user_app/common_widgets/image_widget.dart';
-import 'package:ride_sharing_user_app/common_widgets/loader_widget.dart';
 
+/// The driver identity card that straddles the seam between the dark home
+/// header and the body: avatar in a ring (green while online), name,
+/// verification and level, and the online / offline switch. The switch runs
+/// the same flow as the GO button on the nav dock (DrivingStatusHelper).
 class ProfileStatusCardWidget extends StatefulWidget {
   final ProfileController profileController;
   const ProfileStatusCardWidget({super.key, required this.profileController});
@@ -40,74 +39,76 @@ class _ProfileStatusCardWidgetState extends State<ProfileStatusCardWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final profile = widget.profileController.profileInfo;
+    final Color accent = Theme.of(context).primaryColor;
+    final Color hint = Theme.of(context).hintColor;
+    final Color text = Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
+    final bool online = widget.profileController.isOnline == "1";
+    final bool verified = profile?.isVerified ?? false;
+    final bool showLevel = Get.find<SplashController>().config?.levelStatus ?? false;
+    final String? imageBase = Get.find<SplashController>().config?.imageBaseUrl?.profileImage;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(Dimensions.paddingSizeDefault),
-          border: Border.all(width: .5, color: Theme.of(context).hintColor.withValues(alpha: 0.4)),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: hint.withValues(alpha: Get.isDarkMode ? 0.25 : 0.12)),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: Get.isDarkMode ? 0.45 : 0.16), blurRadius: 24, offset: const Offset(0, 10)),
+          ],
         ),
-        child:widget.profileController.profileInfo != null && widget.profileController.profileInfo!.firstName != null ?
+        child: profile != null && profile.firstName != null ?
         Padding(
-          padding: const EdgeInsets.all(Dimensions.paddingSize),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           child: Row(children: [
-            SizedBox(child: ClipRRect(
-              borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
-              child: ImageWidget(width: 40,height: 40,
-                image: '${Get.find<SplashController>().config!.imageBaseUrl!.profileImage}/${widget.profileController.profileInfo!.profileImage}',
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: online ? const Color(0xFF1DB954) : accent, width: 2),
               ),
-            )),
+              child: ClipOval(
+                child: ImageWidget(
+                  width: 48, height: 48,
+                  image: '$imageBase/${profile.profileImage}',
+                ),
+              ),
+            ),
             const SizedBox(width: Dimensions.paddingSizeDefault),
 
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Flexible(
-                  child: Text(
-                    '${widget.profileController.profileInfo?.firstName ?? ''}  ${widget.profileController.profileInfo?.lastName ?? ''}',
-                    maxLines: 1,overflow: TextOverflow.ellipsis,
-                    style: textBold.copyWith(
-                      color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: Dimensions.fontSizeLarge,
-                    ),
-                  ),
-                ),
+                Flexible(child: Text(
+                  '${profile.firstName ?? ''} ${profile.lastName ?? ''}',
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: textBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: text),
+                )),
                 const SizedBox(width: Dimensions.paddingSizeSmall),
 
                 if(widget.profileController.isCashInHandHoldAccount)...[
                   JustTheTooltip(
-                    backgroundColor: Get.isDarkMode ?
-                    Theme.of(context).primaryColor :
-                    Theme.of(context).textTheme.bodyMedium!.color,
+                    backgroundColor: Get.isDarkMode ? accent : Theme.of(context).textTheme.bodyMedium!.color,
                     controller: tooltipController,
                     preferredDirection: AxisDirection.down,
                     tailLength: 10,
                     tailBaseWidth: 20,
                     content: Container(
                       padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                      child: Text(
-                        'on_hold'.tr,
-                        style: textRegular.copyWith(
-                          color: Colors.white, fontSize: Dimensions.fontSizeDefault,
-                        ),
-                      ),
+                      child: Text('on_hold'.tr, style: textRegular.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeDefault)),
                     ),
                     child: Container(
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Theme.of(context).colorScheme.error
-                      ),
-                      padding: EdgeInsets.all(Dimensions.paddingSizeTiny),
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: Theme.of(context).colorScheme.error),
+                      padding: const EdgeInsets.all(3),
                       child: Icon(Icons.block, color: Theme.of(context).cardColor, size: Dimensions.paddingSizeSmall),
                     ),
                   ),
-                  const SizedBox(width: Dimensions.paddingSizeSmall)
+                  const SizedBox(width: Dimensions.paddingSizeSmall),
                 ],
 
-
                 JustTheTooltip(
-                  backgroundColor: Get.isDarkMode ?
-                  Theme.of(context).primaryColor :
-                  Theme.of(context).textTheme.bodyMedium!.color,
+                  backgroundColor: Get.isDarkMode ? accent : Theme.of(context).textTheme.bodyMedium!.color,
                   controller: faceTooltipController,
                   preferredDirection: AxisDirection.down,
                   tailLength: 10,
@@ -115,100 +116,90 @@ class _ProfileStatusCardWidgetState extends State<ProfileStatusCardWidget> {
                   content: Container(
                     padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
                     child: Text(
-                      (widget.profileController.profileInfo?.isVerified ?? false) ?
-                      'verified'.tr : 'unverified'.tr,
-                      style: textRegular.copyWith(
-                        color: Colors.white, fontSize: Dimensions.fontSizeDefault,
-                      ),
+                      verified ? 'verified'.tr : 'unverified'.tr,
+                      style: textRegular.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeDefault),
                     ),
                   ),
-                  child: Image.asset(
-                    (widget.profileController.profileInfo?.isVerified ?? false) ?
-                    Images.faceVerifiedIcon : Images.nonVerificationIcon,
-                    height: 14, width: 14,
-                  ),
-                )
+                  child: Image.asset(verified ? Images.faceVerifiedIcon : Images.nonVerificationIcon, height: 16, width: 16),
+                ),
               ]),
-              const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+              const SizedBox(height: 5),
 
-              if(Get.find<SplashController>().config!.levelStatus!)
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withValues(alpha: .10),
-                  borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
+              Row(children: [
+                Container(
+                  width: 7, height: 7,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: online ? const Color(0xFF1DB954) : hint),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 2.0, horizontal: Dimensions.paddingSizeExtraSmall,
+                const SizedBox(width: 6),
+                Flexible(child: Text(
+                  online ? 'you_are_online'.tr : 'you_are_offline'.tr,
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: textMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: online ? const Color(0xFF1DB954) : hint),
+                )),
+                if (showLevel && profile.level?.name != null) ...[
+                  const SizedBox(width: Dimensions.paddingSizeSmall),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(color: accent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                    child: Text(profile.level!.name!, style: textMedium.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: accent)),
                   ),
-                  child: Text(
-                    widget.profileController.profileInfo!.level != null ? widget.profileController.profileInfo!.level!.name!: '',
-                    style: textRegular.copyWith(color: Theme.of(context).primaryColor),
-                  ),
-                ),
-              ),
+                ],
+              ]),
             ])),
+            const SizedBox(width: Dimensions.paddingSizeSmall),
 
-            FlutterSwitch(
-              width: 90.0,
-              height: 30.0,
-              valueFontSize: 14.0,
-              toggleSize: 28.0,
-              value: widget.profileController.isOnline == "1",
-              borderRadius: 30.0,
-              padding: 3,
-              activeColor: Theme.of(context).primaryColor.withValues(alpha: .1),
-              toggleBorder: Border.all(width: 5, color: Colors.white.withValues(alpha: .75)),
-              activeText: 'online'.tr,
-              inactiveText: 'offline'.tr,
-              activeTextColor: Theme.of(context).primaryColor,
-              showOnOff: true,
-              activeTextFontWeight: FontWeight.w700,
-              toggleColor: Colors.green,
-              onToggle: (val) async {
-                int ridingCount = Get.find<RideController>().ongoingRideList?.length ?? 0;
-                int parcelCount = Get.find<RideController>().parcelListModel?.totalSize ?? 0;
-                if((ridingCount + parcelCount) > 0){
-                  showCustomSnackBar('sorry_you_canot_go_offline'.tr);
-                }else{
-                  if(widget.profileController.isOnline == "1"){
-                    Get.bottomSheet(ConfirmationBottomsheetWidget(
-                      iconColor: Theme.of(context).cardColor,
-                      title: 'do_you_want_to_turn_off_the_status'.tr,
-                      description: 'if_you_turn_off_the_status_you_wouldnot_get_any_trips'.tr,
-                      icon: Images.errorMessageIcon,
-                      onYesPressed: () async{
-                        Get.back();
-                        Get.dialog(const LoaderWidget(), barrierDismissible: false);
-                        await widget.profileController.profileOnlineOffline(val).then((value){
-                          widget.profileController.getDailyLog();
-                          if(value.statusCode == 200){
-                            Get.back();
-                          }
-                        });
-                      },
-                      onNoPressed: ()=> Get.back(),
-                    ));
-
-                  }else{
-                    Get.dialog(const LoaderWidget(), barrierDismissible: false);
-                    await widget.profileController.profileOnlineOffline(val).then((value){
-                      if(value.statusCode == 200){
-                        widget.profileController.getDailyLog();
-                        Get.back();
-                        if((Get.find<SplashController>().config?.chooseVerificationWhenToTrigger == "before_going_online") && (Get.find<SplashController>().config?.verifyDriverIdentity ?? false)){
-                            HomeScreenHelper().faceVerificationSheet();
-                        }
-
-                      }
-                    });
-                  }
-                }
-
-              }),
+            _OnlineSwitch(online: online, onTap: DrivingStatusHelper.toggle),
           ]),
         ) :
         const SizedBox(),
+      ),
+    );
+  }
+}
+
+/// A pill switch: grey with the knob left while offline, green with the knob
+/// right while online.
+class _OnlineSwitch extends StatelessWidget {
+  final bool online;
+  final VoidCallback onTap;
+  const _OnlineSwitch({required this.online, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final Duration d = reduceMotion ? Duration.zero : const Duration(milliseconds: 220);
+    final Color track = online ? const Color(0xFF1DB954) : Theme.of(context).hintColor.withValues(alpha: 0.35);
+
+    return Semantics(
+      toggled: online,
+      label: online ? 'online'.tr : 'offline'.tr,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: d,
+          curve: Curves.easeOut,
+          width: 58, height: 32,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(color: track, borderRadius: BorderRadius.circular(16)),
+          child: AnimatedAlign(
+            duration: d,
+            curve: Curves.easeOut,
+            alignment: online ? Alignment.centerRight : Alignment.centerLeft,
+            child: Container(
+              width: 26, height: 26,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 4, offset: const Offset(0, 1))],
+              ),
+              child: Icon(
+                online ? Icons.check_rounded : Icons.power_settings_new_rounded,
+                size: 16,
+                color: online ? const Color(0xFF1DB954) : Theme.of(context).hintColor,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

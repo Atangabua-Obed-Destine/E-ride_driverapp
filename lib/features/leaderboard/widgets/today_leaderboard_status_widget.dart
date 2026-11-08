@@ -13,7 +13,7 @@ class TodayLeaderBoardStatusWidget extends StatelessWidget {
     return GetBuilder<LeaderBoardController>(
       builder: (leaderboardController) {
         return Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-          child: Container(transform: Matrix4.translationValues(0, -30, 0),
+          child: Container(transform: Matrix4.translationValues(0, -14, 0), // was -30: covered the title under a tall status bar
             decoration: BoxDecoration(color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(Dimensions.paddingSizeDefault),
                 border: Border.all(width: .5, color: Theme.of(context).primaryColor)),

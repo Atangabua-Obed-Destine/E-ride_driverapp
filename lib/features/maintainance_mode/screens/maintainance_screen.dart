@@ -36,12 +36,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with WidgetsBindi
     if (state == AppLifecycleState.resumed) {
       Get.find<SplashController>().getConfigData().then((bool isSuccess) {
         if(isSuccess){
-          if(Get.find<SplashController>().config!.maintenanceMode != null &&
-              Get.find<SplashController>().config!.maintenanceMode!.maintenanceStatus == 0){
-            Get.offAll(()=> const DashboardScreen());
-          }else if(Get.find<SplashController>().config!.maintenanceMode != null &&
-              Get.find<SplashController>().config!.maintenanceMode!.maintenanceStatus == 1 &&
-              Get.find<SplashController>().config!.maintenanceMode!.selectedMaintenanceSystem!.driverApp == 0) {
+          // Leave maintenance as soon as the backend stops reporting it for
+          // this app, whether the flag cleared or only the driver app was freed.
+          if(!Get.find<SplashController>().isUnderMaintenance) {
             Get.offAll(()=> const DashboardScreen());
           }
         }

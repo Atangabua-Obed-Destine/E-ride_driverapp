@@ -36,8 +36,31 @@ class LocalizationController extends GetxController  implements GetxService{
 
   void loadCurrentLanguage() async {
     if(sharedPreferences.containsKey(AppConstants.languageCode)){
-      _locale = Locale(sharedPreferences.getString(AppConstants.languageCode)!,
-          sharedPreferences.getString(AppConstants.countryCode));
+      final String savedLanguage = sharedPreferences.getString(AppConstants.languageCode)!;
+      final String? savedCountry = sharedPreferences.getString(AppConstants.countryCode);
+
+      // Translations are registered in di_container as "<language>_<country>",
+      // built from AppConstants.languages. A country code saved by an older
+      // build can therefore be orphaned if that list changes (it was when the
+      // French entry moved from CM to FR), and an orphaned pair makes every
+      // string fall back to its raw key. Re-pin to whatever country the list
+      // now carries for that language.
+      String? country = savedCountry;
+      bool pairIsKnown = AppConstants.languages.any((language) =>
+          language.languageCode == savedLanguage && language.countryCode == savedCountry);
+      if(!pairIsKnown) {
+        for(LanguageModel language in AppConstants.languages) {
+          if(language.languageCode == savedLanguage) {
+            country = language.countryCode;
+            break;
+          }
+        }
+        if(country != savedCountry && country != null) {
+          sharedPreferences.setString(AppConstants.countryCode, country);
+        }
+      }
+
+      _locale = Locale(savedLanguage, country);
       _isLtr = !intl.Bidi.isRtlLanguage(_locale.languageCode);
       update();
     }

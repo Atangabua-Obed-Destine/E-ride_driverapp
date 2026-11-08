@@ -69,6 +69,11 @@ class RideService implements RideServiceInterface{
   }
 
   @override
+  Future moveNoAgreement(String tripId) {
+    return rideRepositoryInterface.moveNoAgreement(tripId);
+  }
+
+  @override
   Future ongoingTripList() {
    return rideRepositoryInterface.ongoingTripList();
   }

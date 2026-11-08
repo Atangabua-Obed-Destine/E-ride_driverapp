@@ -21,6 +21,7 @@ import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.
 import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
 import 'package:ride_sharing_user_app/common_widgets/button_widget.dart';
 import 'package:ride_sharing_user_app/common_widgets/text_field_widget.dart';
+import 'package:ride_sharing_user_app/features/auth/widgets/auth_scaffold.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -46,8 +47,8 @@ class _SignInScreenState extends State<SignInScreen> {
     }
     if(Get.find<AuthController>().getLoginCountryCode().isNotEmpty){
       Get.find<AuthController>().countryDialCode = Get.find<AuthController>().getLoginCountryCode();
-    }else if(Get.find<SplashController>().config!.countryCode != null){
-      Get.find<AuthController>().countryDialCode = CountryCode.fromCountryCode(Get.find<SplashController>().config!.countryCode!).dialCode!;
+    }else{
+      Get.find<AuthController>().countryDialCode = Get.find<SplashController>().countryDialCode;
     }
     super.initState();
   }
@@ -61,35 +62,16 @@ class _SignInScreenState extends State<SignInScreen> {
         Get.find<BottomMenuController>().exitApp();
         return;
       },
-      child: SafeArea(
-        top: false,
-        child: Scaffold(
-          body: GetBuilder<AuthController>(builder: (authController){
+      child: GetBuilder<AuthController>(builder: (authController){
             return GetBuilder<ProfileController>(builder: (profileController) {
               return GetBuilder<RideController>(builder: (rideController) {
                 return GetBuilder<LocationController>(builder: (locationController) {
-                  return Center(child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-                      child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const SizedBox(height: Dimensions.paddingSizeSignUp),
-
-                        Center(child: Image.asset( Images.logoWithName, height: 60)),
-                        const SizedBox(height: Dimensions.paddingSizeSignUp),
-
-                        Text(
-                          'login'.tr,
-                          style: textBold.copyWith(fontSize: Dimensions.fontSizeTwenty),
-                        ),
-                        const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-                        Text(
-                          'log_in_message'.tr,
-                          style: textMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),fontSize: Dimensions.fontSizeSmall),
-                          maxLines: 2,
-                        ),
-                        const SizedBox(height: Dimensions.paddingSizeSignUp),
-
+                  return AuthScaffold(
+                    title: 'login'.tr,
+                    subtitle: 'log_in_message'.tr,
+                    showBack: false,
+                    showLockup: true,
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         TextFieldWidget(
                           hintText: 'enter_your_phone'.tr,
                           inputType: TextInputType.number,
@@ -176,7 +158,7 @@ class _SignInScreenState extends State<SignInScreen> {
                             }else{
                               authController.login(authController.countryDialCode,phone, password);
                             }
-                          }, radius: 50,
+                          }, radius: 16, height: 52,
                         ),
 
                           if(Get.find<SplashController>().config?.driverLoginOptions?.otpLogin ?? false)...[
@@ -192,7 +174,7 @@ class _SignInScreenState extends State<SignInScreen> {
                               transparent: true,
                               buttonText: 'login_with_otp'.tr,
                               onPressed: () => Get.to(() => const OtpLoginScreen(fromSignIn: true)),
-                              radius: 50,
+                              radius: 16, height: 52,
                             )
                           ],
 
@@ -205,14 +187,13 @@ class _SignInScreenState extends State<SignInScreen> {
                             transparent: true,
                             buttonText: 'biometric_login'.tr,
                             onPressed: () => Get.to(() => const BiometricLoginScreen()),
-                            radius: 50,
+                            radius: 16, height: 52,
                           ),
                         ],
 
                         const SizedBox(height: Dimensions.paddingSizeDefault),
 
-                        (Get.find<SplashController>().config!.selfRegistration != null &&
-                            Get.find<SplashController>().config!.selfRegistration!) ?
+                        Get.find<SplashController>().selfRegistrationEnabled ?
                         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                           Text(
                             '${'do_not_have_an_account'.tr} ',
@@ -277,14 +258,11 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
 
                       ]),
-                    ),
-                  ));
+                  );
                 });
               });
             });
           }),
-        ),
-      ),
     );
   }
 }

@@ -1,4 +1,7 @@
+import 'package:flutter/services.dart';
 
+import 'package:ride_sharing_user_app/common_widgets/unread_badge.dart';
+import 'package:ride_sharing_user_app/features/chat/controllers/chat_inbox_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:get/get.dart';
@@ -24,6 +27,7 @@ import 'package:ride_sharing_user_app/features/profile/widgets/profile_level_wid
 import 'package:ride_sharing_user_app/features/review/screens/review_screen.dart';
 import 'package:ride_sharing_user_app/features/setting/screens/setting_screen.dart';
 import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
+import 'package:ride_sharing_user_app/features/splash/widgets/splash_backdrop.dart';
 
 class ProfileMenuScreen extends StatefulWidget {
   const ProfileMenuScreen({super.key});
@@ -40,19 +44,23 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
   }
   @override
   Widget build(BuildContext context) {
-    return Scaffold(backgroundColor: Theme.of(context).primaryColor,
+    // Light status bar icons on the dark menu.
+    return AnnotatedRegion<SystemUiOverlayStyle>(value: SystemUiOverlayStyle.light, child: Scaffold(backgroundColor: kSplashInk,
       body: Column(children: [
         const ProfileLevelWidgetWidget(),
         const SizedBox(height: 25),
 
-        Expanded(child: SingleChildScrollView(child: Column(children: [
+        // Rows stay left of the shrunken page the zoom drawer shows on the
+        // right, so their chevrons and counts are never hidden under it.
+        Expanded(child: SingleChildScrollView(padding: EdgeInsets.only(right: MediaQuery.sizeOf(context).width * 0.22), child: Column(children: [
           ProfileMenuItem(icon: Images.profileIcon, title: 'profile',
             onTap: ()=> Get.to(()=> const ProfileScreen()),
           ),
 
-          ProfileMenuItem(icon: Images.message, title: 'message',
+          GetBuilder<ChatInboxController>(builder: (inbox) => ProfileMenuItem(icon: Images.message, title: 'message',
+            badge: inbox.totalUnread,
             onTap: ()=>  Get.to(()=> const ChatScreen()),
-          ),
+          )),
 
           ProfileMenuItem(icon: Images.availabilityIcon, title: 'availability',
             onTap: ()=> Get.to(()=> const AvailabilityScreen()),
@@ -76,7 +84,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
             onTap: ()=> Get.to(()=> const ReferAndEarnScreen()),
           ),
 
-          ProfileMenuItem(icon: Images.leaderBoardIcon, title: 'add_withdraw_info',
+          ProfileMenuItem(icon: Images.bankIcon, title: 'add_withdraw_info',
             onTap: ()=> Get.to(()=> const PaymentInfoScreen()),
           ),
 
@@ -150,7 +158,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
           const SizedBox(height: 100)
         ]))),
       ]),
-    );
+    ));
   }
 }
 
@@ -160,7 +168,8 @@ class ProfileMenuItem extends StatelessWidget {
   final String title;
   final Function()? onTap;
   final bool isAuth;
-  const ProfileMenuItem({super.key, required this.icon, required this.title, this.onTap, this.isAuth = false});
+  final int badge;
+  const ProfileMenuItem({super.key, required this.icon, required this.title, this.onTap, this.isAuth = false, this.badge = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -168,17 +177,24 @@ class ProfileMenuItem extends StatelessWidget {
       onTap: onTap,
       child: Container(color: Colors.transparent,
         child: Padding(
-          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSize),
           child: Row(children: [
-            SizedBox(width: Dimensions.iconSizeLarge,
-              child: Image.asset(icon, color: Get.isDarkMode ? Theme.of(context).textTheme.bodyMedium?.color : Theme.of(context).cardColor),
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Center(child: SizedBox(width: 18, height: 18, child: Image.asset(icon, color: Colors.white))),
             ),
             const SizedBox(width: Dimensions.paddingSizeDefault),
 
-            Text(title.tr, style: textSemiBold.copyWith(color: Get.isDarkMode ? Theme.of(context).textTheme.bodyMedium?.color : Theme.of(context).cardColor, fontSize: Dimensions.fontSizeLarge)),
+            Expanded(child: Text(title.tr, style: textMedium.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeDefault))),
+
+            CountPill(count: badge),
+            if(!isAuth) Icon(Icons.chevron_right_rounded, color: Colors.white.withValues(alpha: 0.35)),
 
             if(isAuth)...[
-              const Spacer(),
 
               GetBuilder<AuthController>(builder: (authController){
                 bool isBiometricOn = authController.isBiometricEnable;

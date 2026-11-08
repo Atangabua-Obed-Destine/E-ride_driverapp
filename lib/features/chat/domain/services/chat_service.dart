@@ -1,3 +1,4 @@
+import 'package:get/get_connect/http/src/response/response.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:ride_sharing_user_app/data/api_client.dart';
 import 'package:ride_sharing_user_app/features/chat/domain/repositories/chat_repository_interface.dart';
@@ -32,5 +33,12 @@ final ChatRepositoryInterface chatRepositoryInterface;
     return chatRepositoryInterface.findChannelRideStatus(channelId);
   }
 
+  @override
+  Future<Response> markChatRead(String channelId) => chatRepositoryInterface.markChatRead(channelId);
 
+  @override
+  Future<Response> sendTyping(String channelId, {bool typing = true}) => chatRepositoryInterface.sendTyping(channelId, typing: typing);
+
+  @override
+  Future<Response> getUnreadSummary() => chatRepositoryInterface.getUnreadSummary();
 }

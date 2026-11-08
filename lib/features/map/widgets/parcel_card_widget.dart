@@ -125,6 +125,7 @@ class ParcelRequestCardWidget extends StatelessWidget {
                     customer: rideRequest.customer!,
                     fare: rideRequest.estimatedFare!,
                     customerRating: rideRequest.customerAvgRating!,
+                    pickupFrom: _senderIfNotCustomer(rideRequest),
                   ),
                 
 
@@ -203,5 +204,14 @@ class ParcelRequestCardWidget extends StatelessWidget {
         );
       });
   }
-}
 
+  /// The sender's name when someone other than the customer hands the parcel
+  /// over (a restaurant for a food order), so the driver knows where to collect.
+  static String? _senderIfNotCustomer(TripDetail trip) {
+    final List<ParcelUserInfo> people = trip.parcelUserInfo ?? [];
+    final String? sender = people.where((p) => p.userType == 'sender').map((p) => p.name?.trim()).firstOrNull;
+    final String customer = '${trip.customer?.firstName ?? ''} ${trip.customer?.lastName ?? ''}'.trim();
+    if (sender == null || sender.isEmpty || sender.toLowerCase() == customer.toLowerCase()) return null;
+    return sender;
+  }
+}

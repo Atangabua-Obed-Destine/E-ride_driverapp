@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ride_sharing_user_app/helper/vehicle_type_helper.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ride_sharing_user_app/features/map/controllers/map_controller.dart';
 import 'package:ride_sharing_user_app/features/realtime_location_trac/domain/model/track_details_model.dart';
@@ -22,6 +23,7 @@ class LocationTrackingController extends GetxController implements GetxService{
   List<LatLng> _polylineCoordinateList = [];
   late Uint8List car;
   late Uint8List bike;
+  late Uint8List truck;
   late Uint8List destination;
 
   Set<Polyline> polylines = {};
@@ -30,6 +32,7 @@ class LocationTrackingController extends GetxController implements GetxService{
   void onInit() async{
     car = await Get.find<RiderMapController>().convertAssetToUnit8List(Images.carIconTop, width: 30);
     bike = await Get.find<RiderMapController>().convertAssetToUnit8List(Images.bike, width: 30);
+    truck = await Get.find<RiderMapController>().convertAssetToUnit8List(Images.truckTop, width: 30);
     destination = await Get.find<RiderMapController>().convertAssetToUnit8List(Images.targetLocationIcon, width: 30);
     super.onInit();
   }
@@ -67,7 +70,7 @@ class LocationTrackingController extends GetxController implements GetxService{
         zIndexInt: 2,
         flat: true,
         anchor: const Offset(0.5, 0.5),
-        icon: BitmapDescriptor.bytes(vehicleCategoryType == 'car' ? car : bike),
+        icon: BitmapDescriptor.bytes(vehicleCategoryType == 'motor_bike' ? bike : VehicleTypeHelper.isMove(vehicleCategoryType) ? truck : car),
       ));
 
       markers.add(Marker(

@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:ride_sharing_user_app/helper/vehicle_type_helper.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ride_sharing_user_app/features/location/controllers/location_controller.dart';
 import 'package:ride_sharing_user_app/features/splash/controllers/splash_controller.dart';
@@ -321,7 +322,9 @@ class RiderMapController extends GetxController implements GetxService {
       car = await convertAssetToUnit8List(Images.mapLocationIcon,  width: 100);
 
     }else{
-      car = await convertAssetToUnit8List(Get.find<ProfileController>().profileInfo?.vehicle?.category?.type == 'car'? Images.carIconTop : Images.bike, width: 30);
+      final String? vehicleType = Get.find<ProfileController>().profileInfo?.vehicle?.category?.type;
+      car = await convertAssetToUnit8List(vehicleType == 'motor_bike' ? Images.bike
+          : VehicleTypeHelper.isMove(vehicleType) ? Images.truckTop : Images.carIconTop, width: 30);
 
     }
 

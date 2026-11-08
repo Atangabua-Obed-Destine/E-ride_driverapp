@@ -1,3 +1,5 @@
+import 'package:ride_sharing_user_app/features/ride/domain/models/trip_deposit_model.dart';
+import 'package:ride_sharing_user_app/common_widgets/waiting_charge_card.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/enums/refund_status_enum.dart';
 
 class TripDetailsModel {
@@ -71,6 +73,7 @@ class TripDetail {
   List<FareBiddings>? fareBiddings;
   String? screenshot;
   bool? isPaused;
+  TripWaiting? waiting;
   bool? isReachedDestination;
   bool? isLoading;
   bool? isReviewed;
@@ -91,6 +94,13 @@ class TripDetail {
   List<String>? deliveryProofImages;
   String? cancellationReason;
   bool? isParcelDeliveryProofEnable;
+  /// The customer's booking deposit, when the trip asks for one.
+  TripDeposit? deposit;
+  /// What is left to collect once the deposit counts toward the fare.
+  double? amountDue;
+  /// E-Ride Move: no fare in the app; the price is agreed with the customer in person.
+  bool isMove = false;
+  List<String> movePhotos = [];
 
   TripDetail(
       {this.id,
@@ -237,6 +247,7 @@ class TripDetail {
     }
     screenshot = json['screenshot'];
     isPaused = json['is_paused'] != null ? (json['is_paused'].toString() == '1' || json['is_paused'].toString() == 'true') : null;
+    waiting = json['waiting'] is Map ? TripWaiting.fromJson(Map<String, dynamic>.from(json['waiting'])) : null;
     isReachedDestination = json['is_reached_destination'] != null ? (json['is_reached_destination'].toString() == '1' || json['is_reached_destination'].toString() == 'true') : false;
     isLoading = false;
     isReviewed = json['customer_review'] != null ? (json['customer_review'].toString() == '1' || json['customer_review'].toString() == 'true') : null;
@@ -258,6 +269,10 @@ class TripDetail {
     deliveryProofImages = json['delivery_proof_images']?.cast<String>();
     cancellationReason = json['cancellation_reason'];
     isParcelDeliveryProofEnable = json['is_parcel_delivery_proof_enabled'] != null ? (json['is_parcel_delivery_proof_enabled'].toString() == '1' || json['is_parcel_delivery_proof_enabled'].toString() == 'true') : null;
+    deposit = TripDeposit.fromJson(json['deposit']);
+    amountDue = double.tryParse('${json['amount_due']}');
+    isMove = json['is_move'] == true;
+    movePhotos = json['move_photos'] is List ? List<String>.from((json['move_photos'] as List).map((e) => '$e')) : [];
   }
 
 

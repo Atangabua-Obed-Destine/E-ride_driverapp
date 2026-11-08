@@ -4,7 +4,7 @@ import 'package:ride_sharing_user_app/util/images.dart';
 
 class AppConstants {
   static const String appName = 'E-Ride Driver';
-  static const String baseUrl = 'http://3.217.74.87';
+  static const String baseUrl = 'https://eride.innovakickstarter.com';
   static const String polylineMapKey = 'AIzaSyCYuvunvdHlIVWuExTDkvKyEcsZWYPA25w';
   static const double appVersion = 3.3;   /// Flutter SDK 3.44.7
   static const String configUri = '/api/driver/configuration';
@@ -63,6 +63,9 @@ class AppConstants {
   static const String ignoreNotification = '/api/driver/ride/ignore-trip-notification';
   static const String arrivedDestination = '/api/driver/ride/coordinate-arrival';
   static const String findChannelRideStatus = '/api/driver/chat/find-channel';
+  static const String chatMarkRead = '/api/driver/chat/mark-read';
+  static const String chatTyping = '/api/driver/chat/typing';
+  static const String chatUnreadSummary = '/api/driver/chat/unread-summary';
   static const String rideCancellationReasonList = '/api/driver/config/cancellation-reason-list';
   static const String parcelOngoingList = '/api/driver/ride/ongoing-parcel-list?limit=100&offset=1';
   static const String parcelUnpaidList = '/api/driver/ride/unpaid-parcel-list?limit=100&offset=1';
@@ -101,6 +104,7 @@ class AppConstants {
   static const String undoSafetyAlert = '/api/driver/safety-alert/undo/';
   static const String ongoingRideList = '/api/driver/ride/all-ride-list';
   static const String outForPickupUri = '/api/driver/ride/update-to-out-for-pickup/';
+  static const String moveNoAgreementUri = '/api/driver/move/'; // {tripId}/no-agreement
   static const String lastRideDetails = '/api/driver/last-ride-details';
   static const String readNotification = '/api/user/read-notification';
   static const String getPaymentMethods = '/api/driver/config/get-payment-methods';
@@ -163,7 +167,7 @@ class AppConstants {
 
   static List<LanguageModel> languages = [
     LanguageModel(imageUrl: Images.unitedKingdom, languageName: 'English', countryCode: 'US', languageCode: 'en'),
-    LanguageModel(imageUrl: Images.saudi, languageName: 'Français', countryCode: 'CM', languageCode: 'fr'),
+    LanguageModel(imageUrl: Images.france, languageName: 'Français', countryCode: 'FR', languageCode: 'fr'),
   ];
 
   static const int imageQuality = 80;

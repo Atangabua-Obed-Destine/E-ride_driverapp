@@ -29,6 +29,8 @@ class OngoingRideCardWidget extends StatelessWidget {
       String tripDate = '0', suffix = 'st';
       List<dynamic> extraRoute =[];
       int onGoingHr = 0, count = 1;
+      bool isLiveTrip = false;
+      int? finishedMinutes;
       if(rideController.lastRideDetails != null && rideController.lastRideDetails!.isNotEmpty){
         tripDate = DateConverter.dateTimeStringToDateOnly(rideController.lastRideDetails![0].createdAt!);
         if(tripDate == "1"){
@@ -41,7 +43,15 @@ class OngoingRideCardWidget extends StatelessWidget {
           suffix = "th";
         }
 
-        onGoingHr = DateTime.now().difference(DateTime.parse(rideController.lastRideDetails![0].createdAt!)).inMinutes;
+        // Time since the trip started only while it is running; for a finished
+        // trip its real duration (none for a cancelled one).
+        final String? status = rideController.lastRideDetails![0].currentStatus;
+        isLiveTrip = status == AppConstants.accepted || status == AppConstants.outForPickup || status == AppConstants.ongoing;
+        // Only a completed trip has a real duration; a cancelled one reports 0.
+        finishedMinutes = status == AppConstants.completed ? rideController.lastRideDetails![0].actualTime?.round() : null;
+        onGoingHr = isLiveTrip
+            ? DateTime.now().difference(DateTime.parse(rideController.lastRideDetails![0].createdAt!)).inMinutes
+            : (finishedMinutes ?? 0);
 
         for(int i =0; i< extraRoute.length; i++){
           if(extraRoute[i] != ''){
@@ -131,9 +141,10 @@ class OngoingRideCardWidget extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(vertical : Dimensions.paddingSizeExtraSmall),
                           child: Text(
                             rideController.orderStatusSelectedIndex == 0 ?
-                            "${rideController.lastRideDetails![0].estimatedTime} min" :
+                            "${double.tryParse('${rideController.lastRideDetails![0].estimatedTime}')?.round() ?? rideController.lastRideDetails![0].estimatedTime} min" :
                             rideController.orderStatusSelectedIndex == 1 ?
                             '${rideController.lastRideDetails![0].estimatedDistance!.toStringAsFixed(2)} km' :
+                            rideController.lastRideDetails![0].isMove ? 'move_request'.tr :
                             PriceConverter.convertPrice(context, double.parse(rideController.lastRideDetails![0].estimatedFare.toString())),
                             style: textRobotoBold.copyWith(fontSize: Dimensions.fontSizeOverLarge),
                           ),
@@ -170,7 +181,7 @@ class OngoingRideCardWidget extends StatelessWidget {
               child: Row(mainAxisAlignment: MainAxisAlignment.center,children: [
                 Text(
                   rideController.orderStatusSelectedIndex == 0 ?
-                  '${'ongoing_trip_time'.tr}:':
+                  '${(isLiveTrip ? 'ongoing_trip_time' : 'trip_time').tr}:':
                   rideController.orderStatusSelectedIndex == 1 ? '' :
                   '${'ongoing_trip_distance'.tr}:',
                   style: textRegular.copyWith(color: Get.isDarkMode ? Theme.of(context).hintColor : Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
@@ -181,7 +192,7 @@ class OngoingRideCardWidget extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
                   child: Text(
                     rideController.orderStatusSelectedIndex == 0 ?
-                    DateConverter.convertFromMinute(onGoingHr, returnValue: true) :
+                    (isLiveTrip || finishedMinutes != null ? DateConverter.convertFromMinute(onGoingHr, returnValue: true) : '-') :
                     rideController.orderStatusSelectedIndex == 1 ? '' :
                     rideController.lastRideDetails![0].estimatedDistance!.toStringAsFixed(2),
                     style: textBold.copyWith(fontSize: Dimensions.fontSizeLarge),
@@ -190,7 +201,7 @@ class OngoingRideCardWidget extends StatelessWidget {
 
                 Text(
                   rideController.orderStatusSelectedIndex == 0 ?
-                  DateConverter.convertFromMinute(onGoingHr, returnType: true) :
+                  (isLiveTrip || finishedMinutes != null ? DateConverter.convertFromMinute(onGoingHr, returnType: true) : '') :
                   rideController.orderStatusSelectedIndex == 1 ? '' :
                   'km'.tr,
                   style: textRegular.copyWith(

@@ -1,5 +1,5 @@
 name: ride_sharing_user_app
-description: A ride sharing Flutter project.
+description: E-Ride driver app by I-NNOVA.
 version: 1.0.0+1
 publish_to: 'none'
 
@@ -100,6 +100,7 @@ flutter:
     - assets/language/
     - assets/svg/
     - assets/map/
+    - assets/sound/
     - assets/
 
   fonts:

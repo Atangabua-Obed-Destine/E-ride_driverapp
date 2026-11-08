@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:camera/camera.dart';
-import 'package:country_code_picker/country_code_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -613,7 +612,7 @@ class ProfileController extends GetxController implements GetxService{
        _additionalFieldControllers[field.id] = TextEditingController();
 
        if (field.fieldType == AdditionalFieldType.phone) {
-         _additionalFieldPhoneCountryCodes[field.id] = CountryCode.fromCountryCode(Get.find<SplashController>().config!.countryCode!).dialCode ?? '+237';
+         _additionalFieldPhoneCountryCodes[field.id] = Get.find<SplashController>().countryDialCode;
        }
 
        profileInfo?.additionalData?.forEach((additionData){

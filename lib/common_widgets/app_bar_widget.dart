@@ -13,10 +13,18 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final bool regularAppbar;
   const AppBarWidget({super.key, required this.title, this.showBackButton = true, this.onBackPressed, this.onTap,  this.regularAppbar = false});
 
+  /// Where screens float their pill tab selector over this app bar: just
+  /// under the title row, whatever the status bar height. (It used to be a
+  /// share of the screen height, which put the pills on the title on phones
+  /// with a tall status bar or a large display size.)
+  static double overlayTop(BuildContext context) => MediaQuery.paddingOf(context).top + 52;
+
   @override
   Widget build(BuildContext context) {
+    final double minHeight = MediaQuery.paddingOf(context).top + kToolbarHeight + 6;
+    final double designHeight = regularAppbar ? 100 : GetPlatform.isAndroid ? 120 : 150;
     return Container(
-      height: regularAppbar ? 100 : GetPlatform.isAndroid ? 120 : 150,
+      height: designHeight > minHeight ? designHeight : minHeight,
       color: Theme.of(context).cardColor,
       child: AppBar(
         title: Text(title, style: textSemiBold.copyWith(
